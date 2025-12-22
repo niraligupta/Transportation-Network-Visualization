@@ -1,0 +1,245 @@
+.trip-planner-root {
+    position: relative;
+}
+
+/* Left sliding panel (Google Maps style) */
+.left-panel {
+    position: fixed;
+    top: 80px;
+    left: 0;
+    height: calc(100% - 120px);
+    width: 0;
+    overflow: hidden;
+    transition: width 300ms ease;
+    z-index: 2000;
+    border-right: 1px solid rgba(0, 0, 0, 0.08);
+    background: #fff;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.12);
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.left-panel.open {
+    width: 420px;
+    padding: 18px;
+}
+
+.left-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.left-panel-body {
+    overflow: auto;
+    max-height: calc(100% - 70px);
+    padding-right: 6px;
+}
+
+/* Trip card */
+.trip-card {
+    background: #f8f8f8;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+}
+
+.trip-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.duration {
+    font-weight: 700;
+    font-size: 18px;
+}
+
+.time-range {
+    color: #666;
+    font-size: 13px;
+}
+
+.trip-badges {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.route-badge {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 16px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 13px;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+}
+
+.walk-badge {
+    font-size: 14px;
+    background: #fff;
+    padding: 6px;
+    border-radius: 6px;
+}
+
+.trip-card-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.select-btn {
+    background: #1976D2;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 0;
+    cursor: pointer;
+}
+
+.trip-id {
+    color: #999;
+    font-size: 12px;
+}
+
+/* overlay */
+.overlay {
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.25);
+    z-index: 1999;
+}
+
+
+/* new--------------------------------- */
+
+/* Panel container */
+.right-panel-modern {
+    width: 360px;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    position: absolute;
+    right: 0;
+    top: 0;
+    box-shadow: -4px 0 18px rgba(0, 0, 0, 0.1);
+    border-left: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.32s ease;
+    z-index: 999;
+}
+
+.right-panel-modern.collapsed {
+    right: -340px;
+}
+
+/* Arrow toggle */
+.panel-toggle-modern {
+    position: absolute;
+    left: -32px;
+    top: 20px;
+    width: 30px;
+    height: 30px;
+    background: #1976D2;
+    color: #fff;
+    border-radius: 8px 0 0 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: -2px 2px 6px rgba(0, 0, 0, 0.15);
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* Header */
+.panel-header-modern {
+    padding: 18px;
+    border-bottom: 1px solid #e3e3e3;
+}
+
+.panel-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111;
+}
+
+.panel-count {
+    font-size: 13px;
+    color: #666;
+    margin-top: 4px;
+}
+
+/* Body */
+.panel-body-modern {
+    padding: 16px;
+    overflow-y: auto;
+    height: calc(100vh - 80px);
+}
+
+/* Trip Card */
+.trip-card-modern {
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 14px;
+    transition: all 0.22s ease;
+    cursor: pointer;
+}
+
+.trip-card-modern:hover {
+    transform: scale(1.01);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.trip-card-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.trip-duration {
+    font-size: 18px;
+    font-weight: 800;
+    color: #111;
+}
+
+.trip-time {
+    font-size: 12px;
+    color: #666;
+    margin-top: 3px;
+}
+
+.trip-summary {
+    font-size: 13px;
+    color: #444;
+    margin-top: 8px;
+    max-width: 220px;
+}
+
+/* Save button */
+.save-btn {
+    background: #1976D2;
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Tip text */
+.tip-text {
+    font-size: 13px;
+    color: #777;
+    margin-top: 10px;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 12px;
+}
