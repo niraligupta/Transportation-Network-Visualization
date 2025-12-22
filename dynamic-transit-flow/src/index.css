@@ -1,0 +1,221 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap');
+/* @import "leaflet/dist/leaflet.css";
+@import "leaflet-ant-path/dist/leaflet-ant-path.css"; */
+
+/* Small UI polish for overlay cards (matches your data-card usage) */
+.data-card {
+  background: rgba(17, 24, 39, 0.85);
+  color: #e6eef8;
+  padding: 10px;
+  border-radius: 10px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 6px 30px rgba(2, 6, 23, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.leaflet-tooltip.my-tooltip {
+  background: rgba(17, 24, 39, 0.95);
+  color: #fff;
+  border-radius: 6px;
+  padding: 6px 8px;
+  box-shadow: 0 6px 20px rgba(2, 6, 23, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+@layer base {
+  :root {
+    --background: 220 20% 4%;
+    --foreground: 210 20% 92%;
+
+    --card: 220 18% 8%;
+    --card-foreground: 210 20% 92%;
+
+    --popover: 220 18% 8%;
+    --popover-foreground: 210 20% 92%;
+
+    --primary: 0 85% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 0 100% 65%;
+
+    --secondary: 185 75% 50%;
+    --secondary-foreground: 220 20% 4%;
+    --secondary-glow: 185 100% 60%;
+
+    --tertiary: 45 100% 55%;
+    --tertiary-foreground: 220 20% 4%;
+    --tertiary-glow: 45 100% 70%;
+
+    --quaternary: 280 70% 55%;
+    --quaternary-foreground: 0 0% 100%;
+    --quaternary-glow: 280 100% 70%;
+
+    --muted: 220 15% 15%;
+    --muted-foreground: 215 15% 55%;
+
+    --accent: 185 75% 50%;
+    --accent-foreground: 220 20% 4%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 15% 18%;
+    --input: 220 15% 18%;
+    --ring: 0 85% 55%;
+
+    --radius: 0.75rem;
+
+    /* Custom transport colors */
+    --tube: 0 85% 55%;
+    --bus: 45 100% 55%;
+    --overground: 25 95% 55%;
+    --dlr: 185 75% 50%;
+    --rail: 280 70% 55%;
+    --tram: 120 60% 45%;
+
+    /* Gradients */
+    --gradient-dark: linear-gradient(135deg, hsl(220 20% 4%) 0%, hsl(220 25% 8%) 50%, hsl(220 20% 4%) 100%);
+    --gradient-glow-primary: radial-gradient(ellipse at center, hsl(0 85% 55% / 0.15) 0%, transparent 70%);
+    --gradient-glow-secondary: radial-gradient(ellipse at center, hsl(185 75% 50% / 0.1) 0%, transparent 70%);
+
+    /* Shadows */
+    --shadow-glow-primary: 0 0 30px hsl(0 85% 55% / 0.4);
+    --shadow-glow-secondary: 0 0 20px hsl(185 75% 50% / 0.3);
+  }
+
+  .dark {
+    --background: 220 20% 4%;
+    --foreground: 210 20% 92%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer components {
+  .transport-line {
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+  }
+
+  .flow-particle {
+    filter: blur(1px);
+  }
+
+  .glow-text {
+    text-shadow: 0 0 20px currentColor;
+  }
+
+  .legend-item {
+    @apply flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-300;
+    @apply hover:bg-muted/50;
+  }
+
+  .legend-dot {
+    @apply w-3 h-3 rounded-full;
+    box-shadow: 0 0 10px currentColor;
+  }
+
+  .station-marker {
+    @apply absolute w-2 h-2 rounded-full bg-foreground/80;
+    transform: translate(-50%, -50%);
+  }
+
+  .data-card {
+    @apply bg-card/60 backdrop-blur-md border border-border/50 rounded-xl p-4;
+  }
+}
+
+@layer utilities {
+  .animate-flow {
+    animation: flow 3s linear infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes flow {
+    0% {
+      stroke-dashoffset: 1000;
+    }
+
+    100% {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes pulse-glow {
+
+    0%,
+    100% {
+      opacity: 0.6;
+      filter: blur(2px);
+    }
+
+    50% {
+      opacity: 1;
+      filter: blur(0px);
+    }
+  }
+
+  @keyframes float {
+
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes particle-move {
+    0% {
+      offset-distance: 0%;
+      opacity: 0;
+    }
+
+    5% {
+      opacity: 1;
+    }
+
+    95% {
+      opacity: 1;
+    }
+
+    100% {
+      offset-distance: 100%;
+      opacity: 0;
+    }
+  }
+}

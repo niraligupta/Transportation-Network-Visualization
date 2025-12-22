@@ -1,0 +1,322 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 174 72% 40%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 40% 94%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 16 85% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 174 72% 40%;
+
+    --radius: 0.75rem;
+
+    /* Custom tokens */
+    --entry: 174 72% 40%;
+    --exit: 16 85% 55%;
+    --chart-grid: 214 32% 91%;
+    --gradient-start: 210 40% 98%;
+    --gradient-end: 210 40% 96%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 174 72% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 94%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 174 72% 40%;
+
+    /* Flow Colors - Traffic intensity gradient */
+    --flow-low: 145 70% 40%;
+    --flow-medium-low: 80 80% 45%;
+    --flow-medium: 45 100% 45%;
+    --flow-medium-high: 25 100% 50%;
+    --flow-high: 0 90% 50%;
+
+    /* Glow effects - lighter for light mode */
+    --glow-cyan: 0 0 15px hsl(200 100% 40% / 0.4), 0 0 30px hsl(200 100% 40% / 0.2);
+    --glow-green: 0 0 15px hsl(145 70% 40% / 0.4), 0 0 30px hsl(145 70% 40% / 0.2);
+    --glow-yellow: 0 0 15px hsl(45 100% 45% / 0.4), 0 0 30px hsl(45 100% 45% / 0.2);
+    --glow-orange: 0 0 15px hsl(25 100% 50% / 0.4), 0 0 30px hsl(25 100% 50% / 0.2);
+    --glow-red: 0 0 15px hsl(0 90% 50% / 0.4), 0 0 30px hsl(0 90% 50% / 0.2);
+
+    /* Gradients */
+    --gradient-flow: linear-gradient(90deg, hsl(145 70% 40%), hsl(45 100% 45%), hsl(0 90% 50%));
+    --gradient-bg: linear-gradient(180deg, hsl(210 40% 98%), hsl(210 30% 95%));
+    --gradient-radial: radial-gradient(circle at center, hsl(210 30% 95%) 0%, hsl(210 40% 98%) 100%);
+
+    /* Canvas colors for light mode */
+    --canvas-bg: 210 30% 95%;
+    --canvas-line: 220 20% 70%;
+    --canvas-text: 220 25% 20%;
+
+
+
+  }
+
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 14%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 14%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 174 72% 56%;
+    --primary-foreground: 222 47% 11%;
+
+    --secondary: 222 30% 20%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 222 30% 18%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 16 85% 60%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 222 30% 22%;
+    --input: 222 30% 22%;
+    --ring: 174 72% 56%;
+
+    /* Custom tokens */
+    --entry: 174 72% 56%;
+    --exit: 16 85% 60%;
+    --chart-grid: 222 30% 25%;
+    --gradient-start: 222 47% 11%;
+    --gradient-end: 222 47% 8%;
+
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 174 72% 56%;
+    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-accent: 222 30% 20%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 222 30% 22%;
+    --sidebar-ring: 174 72% 56%;
+
+
+
+    /* Flow Colors - Traffic intensity gradient */
+    --flow-low: 145 80% 50%;
+    --flow-medium-low: 80 90% 55%;
+    --flow-medium: 50 100% 55%;
+    --flow-medium-high: 30 100% 55%;
+    --flow-high: 0 100% 60%;
+
+    /* Glow effects */
+    --glow-cyan: 0 0 20px hsl(180 100% 50% / 0.6), 0 0 40px hsl(180 100% 50% / 0.4), 0 0 60px hsl(180 100% 50% / 0.2);
+    --glow-green: 0 0 20px hsl(145 80% 50% / 0.6), 0 0 40px hsl(145 80% 50% / 0.4);
+    --glow-yellow: 0 0 20px hsl(50 100% 55% / 0.6), 0 0 40px hsl(50 100% 55% / 0.4);
+    --glow-orange: 0 0 20px hsl(30 100% 55% / 0.6), 0 0 40px hsl(30 100% 55% / 0.4);
+    --glow-red: 0 0 20px hsl(0 100% 60% / 0.6), 0 0 40px hsl(0 100% 60% / 0.4);
+
+    /* Gradients */
+    --gradient-flow: linear-gradient(90deg, hsl(145 80% 50%), hsl(50 100% 55%), hsl(0 100% 60%));
+    --gradient-bg: linear-gradient(180deg, hsl(220 25% 8%), hsl(220 25% 4%));
+    --gradient-radial: radial-gradient(circle at center, hsl(220 25% 12%) 0%, hsl(220 25% 4%) 100%);
+
+    /* Canvas colors for dark mode */
+    --canvas-bg: 220 25% 6%;
+    --canvas-line: 220 25% 25%;
+    --canvas-text: 210 40% 95%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Outfit', sans-serif;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-card/80 backdrop-blur-xl border border-border/50 rounded-xl;
+    box-shadow:
+      0 4px 30px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  .dark .glass-panel {
+    box-shadow:
+      0 4px 30px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .flow-indicator {
+    @apply h-2 rounded-full;
+    background: var(--gradient-flow);
+  }
+
+  .station-node {
+    @apply rounded-full;
+    box-shadow: var(--glow-cyan);
+  }
+
+  .neon-text {
+    text-shadow:
+      0 0 10px hsl(var(--primary) / 0.8),
+      0 0 20px hsl(var(--primary) / 0.6),
+      0 0 30px hsl(var(--primary) / 0.4);
+  }
+
+  .control-button {
+    @apply px-4 py-2 rounded-lg bg-secondary/80 border border-border/50 text-foreground transition-all duration-300 hover:bg-primary/20 hover:border-primary/50 hover:shadow-lg;
+  }
+
+  .control-button:hover {
+    box-shadow: var(--glow-cyan);
+  }
+
+  .control-button.active {
+    @apply bg-primary/30 border-primary;
+    box-shadow: var(--glow-cyan);
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-xl border border-border/50 shadow-sm;
+  }
+
+  .gradient-bg {
+    background: linear-gradient(180deg, hsl(var(--gradient-start)) 0%, hsl(var(--gradient-end)) 100%);
+  }
+
+  .glow-primary {
+    box-shadow: 0 0 40px hsl(var(--primary) / 0.15);
+  }
+
+  .glow-accent {
+    box-shadow: 0 0 40px hsl(var(--accent) / 0.15);
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out forwards;
+  }
+
+  .animate-pulse-soft {
+    animation: pulseSoft 2s ease-in-out infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  .animate-flow {
+    animation: flow 3s linear infinite;
+  }
+
+  @keyframes pulse-glow {
+
+    0%,
+    100% {
+      opacity: 0.6;
+      filter: blur(0px);
+    }
+
+    50% {
+      opacity: 1;
+      filter: blur(2px);
+    }
+  }
+
+  @keyframes flow {
+    0% {
+      stroke-dashoffset: 100;
+    }
+
+    100% {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.6s ease-out forwards;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseSoft {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
