@@ -14,7 +14,7 @@ const makeIcon = (color) => new L.DivIcon({
 
 const ROUTE_COLORS = {
     "RED": "#D32F2F", "BLUE": "#1976D2", "GREEN": "#388E3C", "YELLOW": "#FBC02D",
-    "PINK": "#C2185B", "VIOLET": "#7B1FA2", "ORANGE": "#FB8C00", "bus": "#F06292", "rail": "#42A5F5", "walk": "#66BB6A"
+    "PINK": "#ff66b2", "VIOLET": "#7B1FA2", "ORANGE": "#FB8C00", "bus": "#F06292", "rail": "#42A5F5", "walk": "#66BB6A"
 };
 
 function FitBounds({ bounds }) {

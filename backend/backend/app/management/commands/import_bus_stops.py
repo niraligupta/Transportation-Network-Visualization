@@ -1,3 +1,5 @@
+# python manage.py import_bus_stops --file "C:\Users\Transportation Guest\Downloads\delhi_buses_static_gtfs_v1\stops_bus_bus.txt"
+
 import csv
 from django.core.management.base import BaseCommand
 from app.models import BusStop

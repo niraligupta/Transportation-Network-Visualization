@@ -6,7 +6,7 @@ const transportTypes = [
   { id: "metro-blue", name: "Blue Line", color: "hsl(210, 100%, 50%)", icon: Train },
   { id: "metro-green", name: "Green Line", color: "hsl(140, 70%, 45%)", icon: Train },
   { id: "metro-violet", name: "Violet Line", color: "hsl(280, 70%, 55%)", icon: Train },
-  { id: "metro-pink", name: "Pink Line", color: "hsl(330, 80%, 60%)", icon: Train },
+  { id: "metro-pink", name: "Pink Line", color: "#ff66b2", icon: Train },
   { id: "metro-magenta", name: "Magenta Line", color: "hsl(300, 70%, 50%)", icon: Train },
   { id: "metro-orange", name: "Airport Express", color: "hsl(30, 100%, 50%)", icon: Train },
   { id: "rapid", name: "Rapid Metro", color: "hsl(180, 70%, 50%)", icon: Zap },
@@ -28,14 +28,14 @@ export const TransportLegend = () => {
           >
             <div
               className="legend-dot animate-pulse-glow"
-              style={{ 
+              style={{
                 backgroundColor: type.color,
                 color: type.color,
                 animationDelay: `${index * 0.15}s`
               }}
             />
-            <type.icon 
-              className="w-4 h-4 text-muted-foreground" 
+            <type.icon
+              className="w-4 h-4 text-muted-foreground"
               strokeWidth={1.5}
             />
             <span className="text-sm text-foreground/80">{type.name}</span>

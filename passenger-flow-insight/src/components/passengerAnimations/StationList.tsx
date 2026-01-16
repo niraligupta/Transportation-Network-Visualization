@@ -1,11 +1,13 @@
 import React, { useMemo } from "react";
+import { motion } from "framer-motion";
+import { MapPin, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { ApiStation, StationEntry } from "@/lib/passengerFlowApi";
-import { getFlowColor } from "@/lib/utils";
+import { getFlowColor, formatNumber } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface StationListProps {
     stations: ApiStation[];
-    currentData: StationEntry[];   // already hour-filtered
+    currentData: StationEntry[];
     maxFlow: number;
     selectedStation: string | null;
     onSelectStation: (stationId: string | null) => void;
@@ -18,14 +20,12 @@ const StationList: React.FC<StationListProps> = ({
     selectedStation,
     onSelectStation,
 }) => {
-    /* ================= STATION DATA LOOKUP ================= */
     const stationDataMap = useMemo(() => {
         const map = new Map<string, StationEntry>();
         currentData.forEach((d) => map.set(d.station, d));
         return map;
     }, [currentData]);
 
-    /* ================= SORT BY FLOW ================= */
     const sortedStations = useMemo(() => {
         return [...stations].sort((a, b) => {
             const aData = stationDataMap.get(a.name);
@@ -36,16 +36,26 @@ const StationList: React.FC<StationListProps> = ({
         });
     }, [stations, stationDataMap]);
 
-    /* ================= UI ================= */
     return (
-        <div className="glass-panel p-4 h-full flex flex-col">
-            <h3 className="font-display text-lg text-primary neon-text mb-4">
-                Station Activity
-            </h3>
+        <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4 }}
+            className="glass-panel p-4 h-full flex flex-col"
+        >
+            <div className="flex items-center gap-2 mb-4">
+                <MapPin className="w-5 h-5 text-primary" />
+                <h3 className="font-display text-sm font-semibold text-primary neon-text uppercase tracking-wider">
+                    Station Activity
+                </h3>
+                <span className="ml-auto text-xs text-muted-foreground font-medium">
+                    {stations.length} stations
+                </span>
+            </div>
 
             <ScrollArea className="flex-1 -mx-2 px-2">
                 <div className="space-y-2">
-                    {sortedStations.map((station) => {
+                    {sortedStations.map((station, index) => {
                         const data = stationDataMap.get(station.name);
                         const entry = data?.entry ?? 0;
                         const exit = data?.exit ?? 0;
@@ -56,31 +66,35 @@ const StationList: React.FC<StationListProps> = ({
                         const isSelected = selectedStation === station.id;
 
                         return (
-                            <button
+                            <motion.button
                                 key={station.id}
-                                onClick={() =>
-                                    onSelectStation(isSelected ? null : station.id)
-                                }
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.5 + index * 0.02 }}
+                                onClick={() => onSelectStation(isSelected ? null : station.id)}
                                 className={`w-full text-left p-3 rounded-lg transition-all duration-300 ${isSelected
-                                    ? "bg-primary/20 border border-primary/50"
-                                    : "bg-secondary/50 border border-transparent hover:bg-secondary/80"
+                                    ? "bg-primary/20 border-2 border-primary/50"
+                                    : "bg-secondary/50 border border-transparent hover:bg-secondary/80 hover:border-border"
                                     }`}
                                 style={{
                                     boxShadow: isSelected
-                                        ? `0 0 20px ${color.replace(
-                                            ")",
-                                            " / 0.3)"
-                                        ).replace("hsl", "hsla")}`
+                                        ? `0 0 20px ${color.replace(")", " / 0.3)").replace("hsl", "hsla")}`
                                         : "none",
                                 }}
                             >
-                                {/* ---------- Header ---------- */}
+                                {/* Header */}
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className="font-medium text-sm truncate mr-2">
-                                        {station.name}
-                                    </span>
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <div
+                                            className="w-2 h-2 rounded-full shrink-0"
+                                            style={{ backgroundColor: station.line_color }}
+                                        />
+                                        <span className="font-medium text-sm truncate text-foreground">
+                                            {station.name}
+                                        </span>
+                                    </div>
                                     <div
-                                        className="w-3 h-3 rounded-full shrink-0"
+                                        className="w-3 h-3 rounded-full shrink-0 transition-transform hover:scale-125"
                                         style={{
                                             backgroundColor: color,
                                             boxShadow: `0 0 10px ${color}`,
@@ -88,42 +102,42 @@ const StationList: React.FC<StationListProps> = ({
                                     />
                                 </div>
 
-                                {/* ---------- Entry / Exit ---------- */}
-                                <div className="space-y-1">
-                                    <div className="flex justify-between text-xs">
+                                {/* Entry / Exit */}
+                                <div className="flex gap-4 text-xs mb-2">
+                                    <div className="flex items-center gap-1">
+                                        <ArrowUpRight className="w-3 h-3 text-entry" />
                                         <span className="text-muted-foreground">Entry</span>
-                                        <span className="text-flow-low">
-                                            {entry.toLocaleString()}
+                                        <span className="text-entry font-medium">
+                                            {formatNumber(entry)}
                                         </span>
                                     </div>
-                                    <div className="flex justify-between text-xs">
+                                    <div className="flex items-center gap-1">
+                                        <ArrowDownRight className="w-3 h-3 text-exit" />
                                         <span className="text-muted-foreground">Exit</span>
-                                        <span className="text-flow-high">
-                                            {exit.toLocaleString()}
+                                        <span className="text-exit font-medium">
+                                            {formatNumber(exit)}
                                         </span>
                                     </div>
                                 </div>
 
-                                {/* ---------- Flow Bar ---------- */}
-                                <div className="mt-2 h-1.5 bg-secondary rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full rounded-full transition-all duration-500"
+                                {/* Flow Bar */}
+                                <div className="h-1.5 bg-background/50 rounded-full overflow-hidden">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${Math.min(intensity * 100, 100)}%` }}
+                                        transition={{ duration: 0.5, delay: 0.6 + index * 0.02 }}
+                                        className="h-full rounded-full"
                                         style={{
-                                            width: `${Math.min(intensity * 100, 100)}%`,
-                                            background: `linear-gradient(
-                        90deg,
-                        hsl(145, 80%, 50%),
-                        ${color}
-                      )`,
+                                            background: `linear-gradient(90deg, hsl(145, 80%, 50%), ${color})`,
                                         }}
                                     />
                                 </div>
-                            </button>
+                            </motion.button>
                         );
                     })}
                 </div>
             </ScrollArea>
-        </div>
+        </motion.div>
     );
 };
 

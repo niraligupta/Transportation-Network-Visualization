@@ -1,3 +1,5 @@
+# python manage.py import_passenger_excel
+
 import os
 import pandas as pd
 from django.core.management.base import BaseCommand

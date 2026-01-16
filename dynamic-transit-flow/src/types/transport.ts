@@ -111,7 +111,7 @@ export const METRO_COLORS = {
   BLUE: "#1E90FF",
   GREEN: "#008000",
   VIOLET: "#9400D3",
-  PINK: "#FF69B4",
+  PINK: "#ff66b2",
   MAGENTA: "#FF00FF",
   ORANGE: "#FFA500",
   AQUA: "#00FFFF",

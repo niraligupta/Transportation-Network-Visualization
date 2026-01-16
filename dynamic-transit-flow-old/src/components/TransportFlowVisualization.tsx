@@ -113,7 +113,7 @@ const routes = [
     id: "pink",
     type: "metro-pink",
     name: "Pink Line",
-    color: "hsl(330, 80%, 60%)",
+    color: "#ff66b2",
     description: "Majlis Park ↔ Shiv Vihar",
     length: "59.0 km",
     stations: 38,
@@ -274,7 +274,7 @@ export const TransportFlowVisualization = () => {
   }, []);
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className="relative w-full h-screen overflow-hidden bg-background"
       onMouseMove={handleMouseMove}
@@ -284,9 +284,9 @@ export const TransportFlowVisualization = () => {
       {/* Background glow effects */}
       <div className="absolute inset-0 bg-gradient-glow-primary opacity-50" />
       <div className="absolute inset-0 bg-gradient-glow-secondary opacity-30" />
-      
+
       {/* Grid pattern overlay */}
-      <div 
+      <div
         className="absolute inset-0 opacity-5"
         style={{
           backgroundImage: `
@@ -438,11 +438,11 @@ export const TransportFlowVisualization = () => {
           {/* Rajiv Chowk */}
           <circle cx="480" cy="400" r="12" fill="hsl(var(--background))" stroke="hsl(var(--foreground))" strokeWidth="3" />
           <text x="480" y="380" textAnchor="middle" className="fill-foreground/60 text-[9px] font-mono">RAJIV CHOWK</text>
-          
+
           {/* Kashmere Gate */}
           <circle cx="580" cy="150" r="10" fill="hsl(var(--background))" stroke="hsl(var(--foreground))" strokeWidth="3" />
           <text x="580" y="130" textAnchor="middle" className="fill-foreground/60 text-[9px] font-mono">KASHMERE GATE</text>
-          
+
           {/* Central Secretariat */}
           <circle cx="500" cy="520" r="10" fill="hsl(var(--background))" stroke="hsl(var(--foreground))" strokeWidth="3" />
           <text x="500" y="545" textAnchor="middle" className="fill-foreground/60 text-[9px] font-mono">CENTRAL SECRETARIAT</text>

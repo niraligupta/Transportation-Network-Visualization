@@ -1,6 +1,8 @@
-import React from 'react';
-import { Play, Pause, SkipBack, SkipForward } from 'lucide-react';
-import { Slider } from '@/components/ui/slider';
+import React from "react";
+import { motion } from "framer-motion";
+import { Play, Pause, SkipBack, SkipForward, Clock, Gauge } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { formatHour } from "@/lib/utils";
 
 interface TimeControlProps {
   currentHour: number;
@@ -19,56 +21,69 @@ const TimeControl: React.FC<TimeControlProps> = ({
   speed,
   onSpeedChange,
 }) => {
-  const formatHour = (hour: number) => {
-    const h = hour % 24;
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const hour12 = h % 12 || 12;
-    return `${hour12}:00 ${ampm}`;
-  };
-
   return (
-    <div className="glass-panel p-2 space-y-3">
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="glass-panel p-4 space-y-4"
+    >
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="font-display text-lg text-primary neon-text">Time Control</h3>
-        <span className="font-display text-2xl text-foreground">
+        <div className="flex items-center gap-2">
+          <Clock className="w-5 h-5 text-primary" />
+          <h3 className="font-display text-sm font-semibold text-primary neon-text uppercase tracking-wider">
+            Time Control
+          </h3>
+        </div>
+        <motion.span
+          key={currentHour}
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="font-display text-2xl font-bold text-foreground"
+        >
           {formatHour(currentHour)}
-        </span>
+        </motion.span>
       </div>
 
-      <div className="flex items-center gap-3">
+      {/* Playback Controls */}
+      <div className="flex items-center justify-center gap-2">
         <button
           onClick={() => onHourChange((currentHour - 1 + 24) % 24)}
-          className="control-button p-1"
+          className="control-button p-2"
+          title="Previous Hour"
         >
-          <SkipBack className="w-5 h-5" />
+          <SkipBack className="w-4 h-4" />
         </button>
 
         <button
           onClick={onPlayPause}
-          className={`control-button p-3 ${isPlaying ? 'active' : ''}`}
+          className={`control-button p-3 ${isPlaying ? "active" : ""}`}
+          title={isPlaying ? "Pause" : "Play"}
         >
           {isPlaying ? (
-            <Pause className="w-6 h-6" />
+            <Pause className="w-5 h-5" />
           ) : (
-            <Play className="w-6 h-6" />
+            <Play className="w-5 h-5" />
           )}
         </button>
 
         <button
           onClick={() => onHourChange((currentHour + 1) % 24)}
           className="control-button p-2"
+          title="Next Hour"
         >
-          <SkipForward className="w-5 h-5" />
+          <SkipForward className="w-4 h-4" />
         </button>
       </div>
 
+      {/* Time Slider */}
       <div className="space-y-2">
-        <div className="flex justify-between text-sm text-muted-foreground">
-          <span>12 AM</span>
-          <span>6 AM</span>
-          <span>12 PM</span>
-          <span>6 PM</span>
-          <span>12 AM</span>
+        <div className="flex justify-between text-[10px] text-muted-foreground font-medium">
+          <span>12AM</span>
+          <span>6AM</span>
+          <span>12PM</span>
+          <span>6PM</span>
+          <span>12AM</span>
         </div>
         <Slider
           value={[currentHour]}
@@ -79,10 +94,14 @@ const TimeControl: React.FC<TimeControlProps> = ({
         />
       </div>
 
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Animation Speed</span>
-          <span className="text-primary">{speed}x</span>
+      {/* Speed Control */}
+      <div className="space-y-2 pt-2 border-t border-border/50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Gauge className="w-4 h-4 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground font-medium">Speed</span>
+          </div>
+          <span className="font-display text-sm font-bold text-primary">{speed}x</span>
         </div>
         <Slider
           value={[speed]}
@@ -93,7 +112,7 @@ const TimeControl: React.FC<TimeControlProps> = ({
           className="cursor-pointer"
         />
       </div>
-    </div>
+    </motion.div>
   );
 };
 

@@ -5,11 +5,13 @@ import { Flame } from "lucide-react";
 
 /* ================= API TYPE ================= */
 interface HeatmapRow {
-  line_name: string;
+  line: string;
+  line_color: string;
   hour: number;
   entry: number;
   exit: number;
 }
+
 
 interface PassengerHeatmapProps {
   data: HeatmapRow[];
@@ -31,16 +33,17 @@ export function PassengerHeatmap({
     const result: Record<string, Record<number, number>> = {};
 
     data.forEach((row) => {
-      if (!result[row.line_name]) {
-        result[row.line_name] = {};
-        for (let h = 0; h < 24; h++) result[row.line_name][h] = 0;
+      if (!result[row.line_color]) {
+        result[row.line_color] = {};
+        for (let h = 0; h < 24; h++) result[row.line_color][h] = 0;
       }
 
-      result[row.line_name][row.hour] += row.entry + row.exit;
+      result[row.line_color][row.hour] += row.entry + row.exit;
     });
 
     return result;
   }, [data]);
+
 
   const lines = Object.keys(heatmapData);
 

@@ -6,7 +6,7 @@ from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.pagination import PageNumberPagination
-from .models import Stop, BusStop, Route, Shape, Trip, StopTime,PassengerFlow
+from .models import ODPassengerFlow, Stops, BusStop, Route, Shape, Trip, StopTime,PassengerFlow
 from .serializers import (
     StopSerializer, BusStopSerializer, RouteSerializer,
     ShapeSerializer, StopTimeSerializer
@@ -23,10 +23,179 @@ def latlon_to_xy(lat, lon, min_lat, max_lat, min_lon, max_lon, width=1000, heigh
     return round(x, 2), round(y, 2)
 
 
+@api_view(["GET"])
+def od_flow_months(request):
+    months = (
+        ODPassengerFlow.objects
+        .values_list("month", flat=True)
+        .distinct()
+        .order_by("month")
+    )
+
+    def format_month_label(month_str):
+        # Jan21 -> Jan 2021
+        try:
+            return f"{month_str[:3]} 20{month_str[3:]}"
+        except Exception:
+            return month_str
+
+    return Response([
+        {
+            "value": m,                  # Jan21
+            "label": format_month_label(m)  # Jan 2021
+        }
+        for m in months
+    ])
+
+
+@api_view(["GET"])
+def od_flow_api(request):
+    month = request.GET.get("month", "").strip()
+    if not month:
+        return Response({"error": "month is required"}, status=400)
+    qs = ODPassengerFlow.objects.filter(month__iexact=month)
+
+    if not qs.exists():
+        return Response({"arcs": [], "maxPassengers": 0})
+    stops_map = {
+        s.station_code.strip(): s
+        for s in Stops.objects.only(
+            "station_code",
+            "stop_name",
+            "stop_lat",
+            "stop_lon",
+            "line",
+            "line_color",
+        )
+    }
+
+    arcs = []
+    max_passengers = 0
+    for row in qs:
+        origin_code = row.origin_station.strip()
+        dest_code = row.destination_station.strip()
+
+        o = stops_map.get(origin_code)
+        d = stops_map.get(dest_code)
+        if not o or not d:
+            continue
+
+        max_passengers = max(max_passengers, row.passengers)
+
+        arcs.append({
+            "origin": {
+                "code": origin_code,
+                "name": o.stop_name, 
+                "lat": o.stop_lat,
+                "lng": o.stop_lon,
+                "line": o.line,
+                "line_color": o.line_color,
+            },
+            "destination": {
+                "code": dest_code,
+                "name": d.stop_name, 
+                "lat": d.stop_lat, 
+                "lng": d.stop_lon,
+                "line": d.line,
+                "line_color": d.line_color,
+            },
+            "value": row.passengers,
+        })
+
+    return Response({
+        "arcs": arcs,
+        "maxPassengers": max_passengers,
+    })
+
+
+# @api_view(["GET"])
+# def passenger_flow_api(request):
+#     month = request.GET.get("month", "").strip()
+#     if not month:
+#         return Response({"error": "month is required"}, status=400)
+#     qs = (
+#         PassengerFlow.objects
+#         .annotate(day=ExtractDay("businessday"))
+#         .filter(month__iexact=month, day=today_day)
+#     )
+#     if not qs.exists():
+#         return Response({"stations": [], "hourlyData": {}, "maxFlow": 0})
+#     station_names = qs.values_list("station_name", flat=True).distinct()
+
+#     stops_qs = Stops.objects.filter(
+#         stop_name__in=station_names
+#     ).only(
+#         "stop_name", "stop_lat", "stop_lon", "line", "line_color"
+#     )
+
+#     stops_map = {s.stop_name: s for s in stops_qs}
+#     lats = [s.stop_lat for s in stops_qs]
+#     lons = [s.stop_lon for s in stops_qs]
+
+#     min_lat, max_lat = min(lats), max(lats)
+#     min_lon, max_lon = min(lons), max(lons)
+
+#     stations = []
+#     station_xy_map = {}
+
+#     for idx, stop in enumerate(stops_qs):
+#         x, y = latlon_to_xy(
+#             stop.stop_lat,
+#             stop.stop_lon,
+#             min_lat,
+#             max_lat,
+#             min_lon,
+#             max_lon
+#         )
+      
+
+#         stations.append({
+#             "id": str(idx + 1),
+#             "name": stop.stop_name,
+#             "x": x,
+#             "y": y,
+#             "line": stop.line,
+#             "line_color": stop.line_color,
+#         })
+
+#         station_xy_map[stop.stop_name] = (x, y)
+#     hourly_data = {}
+#     max_flow = 0
+
+#     for hour in range(24):
+#         hour_qs = (
+#             qs.filter(hour=hour)
+#             .values("station_name")
+#             .annotate(
+#                 entry=Sum("entry"),
+#                 exit=Sum("exit")
+#             )
+#         )
+
+#         key = f"{month}-{hour}"
+#         hourly_data[key] = []
+
+#         for row in hour_qs:
+#             total = (row["entry"] or 0) + (row["exit"] or 0)
+#             max_flow = max(max_flow, total)
+
+#             hourly_data[key].append({
+#                 "station": row["station_name"],
+#                 "entry": row["entry"] or 0,
+#                 "exit": row["exit"] or 0,
+#             })
+
+#     return Response({
+#         "stations": stations,
+#         "hourlyData": hourly_data,
+#         "maxFlow": max_flow,
+#     })
+
+
 
 @api_view(["GET"])
 def passenger_flow_api(request):
-    month = request.GET.get("month")
+    month = request.GET.get("month", "").strip()
     if not month:
         return Response({"error": "month is required"}, status=400)
 
@@ -39,52 +208,26 @@ def passenger_flow_api(request):
     if not qs.exists():
         return Response({"stations": [], "hourlyData": {}, "maxFlow": 0})
 
-    # -------------------------------------------------
-    # 1. Fetch station coordinates
-    # -------------------------------------------------
     station_names = qs.values_list("station_name", flat=True).distinct()
-    stops = Stop.objects.filter(stop_name__in=station_names)
 
-    lats = [s.stop_lat for s in stops]
-    lons = [s.stop_lon for s in stops]
-
-    min_lat, max_lat = min(lats), max(lats)
-    min_lon, max_lon = min(lons), max(lons)
+    stops_qs = Stops.objects.filter(
+        stop_name__in=station_names
+    ).only(
+        "stop_name", "stop_lat", "stop_lon", "line", "line_color"
+    )
 
     stations = []
-    station_xy_map = {}
 
-    for i, stop in enumerate(stops):
-        x, y = latlon_to_xy(
-            stop.stop_lat,
-            stop.stop_lon,
-            min_lat,
-            max_lat,
-            min_lon,
-            max_lon
-        )
-
-        # Get line info from PassengerFlow
-        pf = qs.filter(station_name=stop.stop_name).first()
-
-        line_code = pf.linename if pf else None
-        line_name = LINE_NAME_MAP.get(line_code, "Unknown")
-        line_color = LINE_COLOR_MAP.get(line_name, "#9ca3af")
-
+    for idx, stop in enumerate(stops_qs):
         stations.append({
-            "id": str(i + 1),
+            "id": str(idx + 1),
             "name": stop.stop_name,
-            "x": x,
-            "y": y,
-            "line": line_name,
-            "line_color": line_color,
+            "lat": stop.stop_lat,
+            "lon": stop.stop_lon,
+            "line": stop.line,
+            "line_color": stop.line_color,
         })
 
-        station_xy_map[stop.stop_name] = (x, y)
-
-    # -------------------------------------------------
-    # 2. Hourly passenger data
-    # -------------------------------------------------
     hourly_data = {}
     max_flow = 0
 
@@ -118,304 +261,104 @@ def passenger_flow_api(request):
     })
 
 
-# @api_view(["GET"])
-# def top_busiest_stations(request):
-#     month = request.GET.get("month")
-#     line_code = request.GET.get("line_code")
-
-#     if not month or not line_code:
-#         return Response(
-#             {"error": "month and line_code are required"},
-#             status=400
-#         )
-
-#     base_qs = PassengerFlow.objects.filter(
-#         month__iexact=month,
-#         linename__iexact=line_code
-#     )
-
-#     if not base_qs.exists():
-#         return Response([])
-
-#     # -------------------------------
-#     # Step 1: Station-wise totals
-#     # -------------------------------
-#     stations = (
-#         base_qs.values("station_name")
-#         .annotate(
-#             total_entry=Sum("entry"),
-#             total_exit=Sum("exit"),
-#         )
-#     )
-
-#     # Sort by total passengers
-#     stations = sorted(
-#         stations,
-#         key=lambda x: (x["total_entry"] or 0) + (x["total_exit"] or 0),
-#         reverse=True
-#     )[:10]
-
-#     result = []
-
-#     # -------------------------------
-#     # Step 2: Peak hour per station
-#     # -------------------------------
-#     for s in stations:
-#         station_name = s["station_name"]
-
-#         hourly = (
-#             base_qs.filter(station_name=station_name)
-#             .values("hour")
-#             .annotate(total=Sum("entry") + Sum("exit"))
-#             .order_by("-total")
-#         )
-
-#         peak_hour = hourly[0]["hour"] if hourly else 0
-
-#         result.append({
-#             "station": station_name,
-#             "total_entry": s["total_entry"] or 0,
-#             "total_exit": s["total_exit"] or 0,
-#             "peak_hour": peak_hour,
-#         })
-
-#     return Response(result)
-
-
-# @api_view(["GET"])
-# def line_heatmap(request):
-#     month = request.GET.get("month")
-
-#     if not month:
-#         return Response(
-#             {"error": "month is required"},
-#             status=400
-#         )
-
-#     qs = PassengerFlow.objects.filter(
-#         month__iexact=month
-#     )
-
-#     if not qs.exists():
-#         return Response([])
-
-#     heatmap_qs = (
-#         qs.values("linename", "hour")
-#         .annotate(
-#             entry=Sum("entry"),
-#             exit=Sum("exit")
-#         )
-#         .order_by("linename", "hour")
-#     )
-
-#     data = [
-#         {
-#             "line_name": LINE_NAME_MAP.get(row["linename"], row["linename"]),
-#             "hour": row["hour"],
-#             "entry": row["entry"] or 0,
-#             "exit": row["exit"] or 0,
-#         }
-#         for row in heatmap_qs
-#     ]
-
-#     return Response(data)
-
-
-
-# @api_view(["GET"])
-# def station_hourly_flow(request):
-#     month = request.GET.get("month", "").strip()
-#     line_code = request.GET.get("line_code", "").strip()
-#     station = request.GET.get("station", "").strip()
-
-#     if not month or not line_code or not station:
-#         return Response(
-#             {"error": "month, line_code and station are required"},
-#             status=400
-#         )
-
-#     qs = PassengerFlow.objects.filter(
-#         month__iexact=month,
-#         linename__iexact=line_code,
-#         station_name__iexact=station
-#     )
-
-#     # Aggregate hour-wise data
-#     hourly_data = (
-#         qs.values("hour")
-#         .annotate(
-#             entry=Sum("entry"),
-#             exit=Sum("exit")
-#         )
-#         .order_by("hour")
-#     )
-
-#     # Ensure 0–23 hours always exist (important for charts)
-#     hour_map = {row["hour"]: row for row in hourly_data}
-
-#     final_data = []
-#     for h in range(24):
-#         final_data.append({
-#             "hour": f"{str(h).zfill(2)}:00",
-#             "entry": hour_map.get(h, {}).get("entry", 0) or 0,
-#             "exit": hour_map.get(h, {}).get("exit", 0) or 0,
-#         })
-
-#     return Response({
-#         "station": station,
-#         "month": month,
-#         "line_code": line_code,
-#         "data": final_data
-#     })
-
-
-
-
-# @api_view(["GET"])
-# def station_summary(request):
-#     month = request.GET.get("month", "").strip()
-#     line_code = request.GET.get("line_code", "").strip()
-#     station = request.GET.get("station", "").strip()
-
-#     if not month or not line_code or not station:
-#         return Response(
-#             {"error": "month, line_code and station are required"},
-#             status=400
-#         )
-
-#     qs = PassengerFlow.objects.filter(
-#         month__iexact=month,
-#         linename__iexact=line_code,
-#         station_name__iexact=station
-#     )
-
-#     if not qs.exists():
-#         return Response({
-#             "station": station,
-#             "month": month,
-#             "line_code": line_code,
-#             "total_entry": 0,
-#             "total_exit": 0,
-#             "peak_hour": "00",
-#             "avg_hourly_flow": 0
-#         })
-
-#     totals = qs.aggregate(
-#         total_entry=Sum("entry"),
-#         total_exit=Sum("exit"),
-#     )
-
-#     total_entry = totals["total_entry"] or 0
-#     total_exit = totals["total_exit"] or 0
-
-#     hourly = (
-#         qs.values("hour")
-#         .annotate(total=Sum("entry") + Sum("exit"))
-#         .order_by("-total")
-#     )
-
-#     peak_hour = hourly[0]["hour"] if hourly else 0
-
-#     active_hours = qs.values("hour").distinct().count()
-#     avg_hourly_flow = (
-#         (total_entry + total_exit) // active_hours if active_hours else 0
-#     )
-
-#     return Response({
-#         "station": station,
-#         "month": month,
-#         "line_code": line_code,
-#         "total_entry": total_entry,
-#         "total_exit": total_exit,
-#         "peak_hour": peak_hour,
-#         "avg_hourly_flow": avg_hourly_flow,
-#     })
 
 
 @api_view(["GET"])
 def line_heatmap(request):
-    month = request.GET.get("month")
-
+    month = request.GET.get("month", "").strip()
     if not month:
         return Response({"error": "month is required"}, status=400)
 
-    today_day = timezone.localdate().day
-
-    qs = PassengerFlow.objects.annotate(
-        day=ExtractDay("businessday")
-    ).filter(
-        month__iexact=month,
-        day=today_day
+    qs = (
+        PassengerFlow.objects
+        .annotate(day=ExtractDay("businessday"))
+        .filter(month__iexact=month, day=today_day)
     )
 
+    if not qs.exists():
+        return Response([])
+
+    stops_line_color_map = {
+        str(s.line).strip(): s.line_color
+        for s in Stops.objects.exclude(line_color__isnull=True)
+        .only("line", "line_color")
+        .distinct("line")
+    }
     heatmap_qs = (
         qs.values("linename", "hour")
-        .annotate(entry=Sum("entry"), exit=Sum("exit"))
+        .annotate(
+            entry=Sum("entry"),
+            exit=Sum("exit")
+        )
         .order_by("linename", "hour")
     )
 
-    return Response([
-        {
-            "line_name": LINE_NAME_MAP.get(row["linename"], row["linename"]),
+    response = []
+
+    for row in heatmap_qs:
+        line_code = row["linename"]         
+        numeric_line = line_code.replace("LINE", "").lstrip("0") 
+
+        response.append({
+            "line": line_code,
+            "line_color": stops_line_color_map.get(numeric_line, "#9ca3af"),
             "hour": row["hour"],
             "entry": row["entry"] or 0,
             "exit": row["exit"] or 0,
-        }
-        for row in heatmap_qs
-    ])
+        })
 
+    return Response(response)
 
 
 
 @api_view(["GET"])
 def top_busiest_stations(request):
-    month = request.GET.get("month")
-    line_code = request.GET.get("line_code")
+    month = request.GET.get("month", "").strip()
+    line_code = request.GET.get("line_code", "").strip()
 
     if not month or not line_code:
         return Response(
             {"error": "month and line_code are required"},
             status=400
         )
-
-    today_day = timezone.localdate().day
-
-    base_qs = PassengerFlow.objects.annotate(
-        day=ExtractDay("businessday")
-    ).filter(
-        month__iexact=month,
-        linename__iexact=line_code,
-        day=today_day
+    base_qs = (
+        PassengerFlow.objects
+        .annotate(day=ExtractDay("businessday"))
+        .filter(
+            month__iexact=month,
+            linename__iexact=line_code,
+            day=today_day
+        )
     )
 
-    stations = (
+    if not base_qs.exists():
+        return Response([])
+    station_totals = (
         base_qs.values("station_name")
         .annotate(
             total_entry=Sum("entry"),
             total_exit=Sum("exit"),
+            total_passengers=Sum("entry") + Sum("exit"),
         )
+        .order_by("-total_passengers")[:10]
     )
-
-    stations = sorted(
-        stations,
-        key=lambda x: (x["total_entry"] or 0) + (x["total_exit"] or 0),
-        reverse=True
-    )[:10]
-
     result = []
-    for s in stations:
-        hourly = (
-            base_qs.filter(station_name=s["station_name"])
+
+    for row in station_totals:
+        peak = (
+            base_qs.filter(station_name=row["station_name"])
             .values("hour")
             .annotate(total=Sum("entry") + Sum("exit"))
             .order_by("-total")
+            .first()
         )
 
         result.append({
-            "station": s["station_name"],
-            "total_entry": s["total_entry"] or 0,
-            "total_exit": s["total_exit"] or 0,
-            "peak_hour": hourly[0]["hour"] if hourly else 0,
+            "station": row["station_name"],
+            "total_entry": row["total_entry"] or 0,
+            "total_exit": row["total_exit"] or 0,
+            "total_passengers": row["total_passengers"] or 0,
+            "peak_hour": peak["hour"] if peak else 0,
         })
 
     return Response(result)
@@ -431,10 +374,7 @@ def station_hourly_flow(request):
         return Response(
             {"error": "month, line_code and station are required"},
             status=400
-        )
-
-    today_day = timezone.localdate().day
-
+        ) 
     qs = PassengerFlow.objects.annotate(
         day=ExtractDay("businessday")
     ).filter(
@@ -479,8 +419,6 @@ def station_summary(request):
             {"error": "month, line_code and station are required"},
             status=400
         )
-
-    today_day = timezone.localdate().day
 
     qs = PassengerFlow.objects.annotate(
         day=ExtractDay("businessday")
@@ -567,39 +505,6 @@ def dashboard_summary(request):
     })
 
 
-# @api_view(["GET"])
-# def dashboard_summary(request):
-#     month = request.GET.get("month")
-#     line_code = request.GET.get("line_code")
-
-#     if not month or not line_code:
-#         return Response(
-#             {"error": "month and line_code are required"},
-#             status=400
-#         )
-
-#     qs = PassengerFlow.objects.filter(
-#         month=month,
-#         linename=line_code   # ✅ LINE03
-#     )
-
-#     data = qs.aggregate(
-#         total_entry=Sum("entry"),
-#         total_exit=Sum("exit"),
-#         total_stations=Count("station_name", distinct=True),
-#     )
-
-#     total_entry = data["total_entry"] or 0
-#     total_exit = data["total_exit"] or 0
-
-#     return Response({
-#         "month": month,
-#         "line_code": line_code,
-#         "total_entry": total_entry,
-#         "total_exit": total_exit,
-#         "total_stations": data["total_stations"] or 0,
-#         "total_passengers": total_entry + total_exit,
-#     })
 
 
 
@@ -642,15 +547,6 @@ def month_line_station_list(request):
     })
 
 
-
-
-
-
-
-
-
-
-
 # Helper: Convert time string "HH:MM:SS" to seconds
 def time_to_seconds(t):
     if not t or ':' not in t:
@@ -675,9 +571,8 @@ def live_metro_positions(request):
     start_time = datetime.combine(today, time(0, 0)) - timedelta(hours=4)
     end_time = datetime.combine(today, time(23, 59, 59)) + timedelta(hours=2)
 
-    # Prefetch all necessary related data in ONE query per type
     trips = Trip.objects.select_related('route', 'shape_id').prefetch_related(
-        'stoptime_set__stop'
+        'stoptime_set__stops'
     ).filter(
         stoptime__departure_time__isnull=False
     ).distinct()
@@ -689,13 +584,10 @@ def live_metro_positions(request):
         if len(stop_times) < 2:
             continue
 
-        # Sort once
         stop_times.sort(key=lambda x: x.stop_sequence)
 
-        # Convert all times to seconds once per trip
         times_sec = [time_to_seconds(st.departure_time) for st in stop_times]
 
-        # Find the segment where now_sec falls
         found = False
         for i in range(len(stop_times) - 1):
             t1_sec = times_sec[i]
@@ -707,8 +599,8 @@ def live_metro_positions(request):
                 s1 = stop_times[i]
                 s2 = stop_times[i + 1]
 
-                lat = s1.stop.stop_lat + (s2.stop.stop_lat - s1.stop.stop_lat) * progress
-                lon = s1.stop.stop_lon + (s2.stop.stop_lon - s1.stop.stop_lon) * progress
+                lat = s1.stops.stop_lat + (s2.stops.stop_lat - s1.stops.stop_lat) * progress
+                lon = s1.stops.stop_lon + (s2.stops.stop_lon - s1.stops.stop_lon) * progress
 
                 running_trains.append({
                     "trip_id": trip.trip_id,
@@ -716,9 +608,9 @@ def live_metro_positions(request):
                     "progress": round(progress * 100, 2),
                     "current_lat": round(lat, 6),
                     "current_lon": round(lon, 6),
-                    "from_stop": s1.stop.stop_name,
-                    "to_stop": s2.stop.stop_name,
-                    "next_stop": s2.stop.stop_name,
+                    "from_stop": s1.stops.stop_name,
+                    "to_stop": s2.stops.stop_name,
+                    "next_stop": s2.stops.stop_name,
                     "start_time": s1.departure_time,
                     "end_time": s2.arrival_time or s2.departure_time,
                 })
@@ -733,18 +625,16 @@ def live_metro_positions(request):
 
 @api_view(["GET"])
 def metro_routes(request):
-    cache_key = "metro_routes_full_data_v3"  # Bumped version to clear old cache
+    cache_key = "metro_routes_full_data_v3"  
     cached_data = cache.get(cache_key)
 
     if cached_data is not None:
         return Response(cached_data)
 
-    # Prefetch only valid relations
     routes = Route.objects.prefetch_related(
-        'trip_set__stoptime_set__stop'  # This is valid
+        'trip_set__stoptime_set__stops' 
     ).all()
 
-    # Pre-load all shapes into a dict: {shape_id: [points]}
     all_shapes = Shape.objects.all()
     shapes_dict = {}
     for pt in all_shapes:
@@ -753,7 +643,7 @@ def metro_routes(request):
             shapes_dict[sid] = []
         shapes_dict[sid].append(pt)
 
-    # Sort points within each shape
+
     for sid in shapes_dict:
         shapes_dict[sid].sort(key=lambda x: x.shape_pt_sequence)
 
@@ -766,37 +656,32 @@ def metro_routes(request):
     output = []
 
     for route in routes:
-        # trip = route.trip_set.annotate(num_stops=Count('stoptime')).order_by('-num_stops').first()
-
         trip = route.trip_set.first()
         if not trip or not trip.shape_id:
             continue
 
-        shape_id = trip.shape_id.shape_id  # This is correct: shape_id is a Shape object
+        shape_id = trip.shape_id.shape_id  
 
-        # Get pre-loaded and sorted shape points
         shape_points = shapes_dict.get(shape_id, [])
         if not shape_points:
             continue
 
         path = [[float(pt.shape_pt_lat), float(pt.shape_pt_lon)] for pt in shape_points]
 
-        # Stations from prefetched stop times
         stop_times = trip.stoptime_set.order_by("stop_sequence")
         stations = [
             {
-                "stop_id": st.stop.stop_id,
-                "name": st.stop.stop_name,
-                "lat": float(st.stop.stop_lat),
-                "lon": float(st.stop.stop_lon),
+                "stop_id": st.stops.stop_id,
+                "name": st.stops.stop_name,
+                "lat": float(st.stops.stop_lat),
+                "lon": float(st.stops.stop_lon),
             }
-            for st in stop_times if st.stop
+            for st in stop_times if st.stops
         ]
 
         if not stations:
             continue
 
-        # Clean name and color
         clean_name = route.route_long_name
         color_key = "GREY"
         if route.route_long_name and "_" in route.route_long_name:
@@ -816,9 +701,11 @@ def metro_routes(request):
 
     cache.set(cache_key, output, timeout=3600)
     return Response(output)
+
+
 # Paginated List Views
 class MetroStopList(generics.ListAPIView):
-    queryset = Stop.objects.all().order_by('stop_id')
+    queryset = Stops.objects.all().order_by('stop_id')
     serializer_class = StopSerializer
     pagination_class = StandardResultsSetPagination
 

@@ -3,7 +3,7 @@ from .views import (
     MetroStopList, BusStopList, RouteList,
     get_route_shape, get_route_stops
 )
-from .views import  passenger_flow_api, top_busiest_stations, line_heatmap, station_hourly_flow,station_summary,dashboard_summary,month_line_station_list,metro_routes,live_metro_positions
+from .views import od_flow_months, od_flow_api, passenger_flow_api, top_busiest_stations, line_heatmap, station_hourly_flow,station_summary,dashboard_summary,month_line_station_list,metro_routes,live_metro_positions
 
 urlpatterns = [
     path("metro-stops/", MetroStopList.as_view()),
@@ -18,6 +18,9 @@ urlpatterns = [
     path("line-heatmap/", line_heatmap),
     path("top-busiest-stations/", top_busiest_stations),
     path("passenger-flow/", passenger_flow_api),
+    path("od-flow/", od_flow_api),
+    path("od-flow/months/", od_flow_months),
+
     # Route geometry + stations
     path("routes/<str:route_id>/shape/", get_route_shape),
     path("routes/<str:route_id>/stops/", get_route_stops),
