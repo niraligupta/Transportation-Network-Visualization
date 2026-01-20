@@ -1,15 +1,15 @@
-// TripForm.jsx — FIXED & MATCHING UPLOADED TripPlanner.jsx
+// src/components/TripForm.jsx
 
 import React, { useState, useRef, useEffect } from "react";
 import { HiOutlineSwitchVertical } from "react-icons/hi";
 import PreferencesModal from "./PreferencesModel";
+import { searchMetroStops, planTrip } from "../../api/metroApi";
 
 export default function TripForm({
     onPlanSuccess,
     handleUseCurrentLocation,
     handleSwap
 }) {
-
     const [from, setFrom] = useState("");
     const [to, setTo] = useState("");
 
@@ -26,45 +26,30 @@ export default function TripForm({
 
     const [loading, setLoading] = useState(false);
     const [showPrefs, setShowPrefs] = useState(false);
+    const [detecting, setDetecting] = useState(false);
 
     const fromRef = useRef(null);
     const toRef = useRef(null);
-
     const debounceFrom = useRef(null);
     const debounceTo = useRef(null);
 
-    const [detecting, setDetecting] = useState(false);
-
-
-    /* ---------------------------------------------------------------------
-       FETCH SUGGESTIONS
-    --------------------------------------------------------------------- */
     async function fetchSuggestionsNow(query, setter) {
-        if (!query.trim()) return setter([]);
-
         try {
-            const res = await fetch(
-                `http://localhost:8000/api/search-stops/?q=${encodeURIComponent(query)}`
-            );
-            if (!res.ok) return setter([]);
-            const data = await res.json();
-            setter(data.map(d => d.name || d.stop_name));
+            const results = await searchMetroStops(query);
+            setter(results);
         } catch {
             setter([]);
         }
     }
 
-    function fetchSuggestionsDebounced(query, setter, timerRef) {
-        clearTimeout(timerRef.current);
-        timerRef.current = setTimeout(
-            () => fetchSuggestionsNow(query, setter),
-            250
-        );
+    function fetchSuggestionsDebounced(query, setter, ref) {
+        clearTimeout(ref.current);
+        ref.current = setTimeout(() => {
+            fetchSuggestionsNow(query, setter);
+        }, 250);
     }
 
-    /* ---------------------------------------------------------------------
-       PLAN TRIP
-    --------------------------------------------------------------------- */
+
     async function handlePlan(e) {
         e.preventDefault();
 
@@ -80,47 +65,32 @@ export default function TripForm({
         try {
             let departValue = null;
 
-            if (when === "depart_at" || when === "arrive_by") {
+            if (when !== "leave_now") {
                 if (!departAt) {
-                    alert("Please select date & time.");
+                    alert("Please select date & time");
                     setLoading(false);
                     return;
                 }
                 departValue = new Date(departAt).toISOString();
             }
 
-            const res = await fetch("http://localhost:8000/api/plan_trip/", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    from_location: from,
-                    to_location: to,
-                    when,
-                    depart_at: departValue
-                })
+            const trips = await planTrip({
+                from_location: from,
+                to_location: to,
+                when,
+                depart_at: departValue
             });
 
-            const data = await res.json();
-
-            if (!res.ok || !data.trips) {
-                alert(data.error || "No trip found");
-                setLoading(false);
-                return;
-            }
-
-            onPlanSuccess(data.trips);
+            onPlanSuccess(trips);
         } catch (err) {
-            alert("Something went wrong");
+            alert(err.message || "Something went wrong");
         }
 
         setLoading(false);
     }
 
-    /* ---------------------------------------------------------------------
-       CLICK OUTSIDE CLOSE SUGGESTIONS
-    --------------------------------------------------------------------- */
     useEffect(() => {
-        function onDocClick(e) {
+        function onClick(e) {
             if (!fromRef.current?.contains(e.target)) {
                 setFromSuggestions([]);
                 setFromFocused(false);
@@ -130,41 +100,35 @@ export default function TripForm({
                 setToFocused(false);
             }
         }
-        document.addEventListener("click", onDocClick);
-        return () => document.removeEventListener("click", onDocClick);
+        document.addEventListener("click", onClick);
+        return () => document.removeEventListener("click", onClick);
     }, []);
 
     return (
         <div className="bg-white rounded-lg shadow-xl p-6 relative max-w-2xl mx-auto">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-2xl font-semibold text-gray-700">Trip Planner</h3>
-                <div className="px-4 py-2 rounded bg-metro-light-blue text-metro-blue font-medium">NexTrip</div>
+                <div className="px-4 py-2 rounded bg-metro-light-blue text-metro-blue font-medium">
+                    NexTrip
+                </div>
             </div>
+
             <form onSubmit={handlePlan} className="space-y-6">
-
-                {/* ---------------- A / B + Input Layout ---------------- */}
                 <div className="flex items-start gap-4 relative">
-
-                    {/* A - B icons */}
                     <div className="flex flex-col items-center mt-3">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-green-500 text-white font-bold">
+                        <div className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center font-bold">
                             A
                         </div>
-
                         <div className="w-px bg-gray-300 h-12 my-1" />
-
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-red-500 text-white font-bold">
+                        <div className="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center font-bold">
                             B
                         </div>
                     </div>
 
-                    {/* Inputs */}
                     <div className="flex-1">
-
                         {/* FROM */}
                         <div ref={fromRef} className="relative">
                             <label className="absolute left-0 text-sm text-gray-500">From</label>
-
                             <input
                                 value={from}
                                 onChange={(e) => {
@@ -181,7 +145,6 @@ export default function TripForm({
                                 className="w-full border-b border-gray-300 pt-6 pb-2 bg-transparent focus:outline-none"
                             />
 
-                            {/* Use current location */}
                             <button
                                 type="button"
                                 disabled={detecting}
@@ -190,32 +153,11 @@ export default function TripForm({
                                     await handleUseCurrentLocation(setFrom);
                                     setDetecting(false);
                                 }}
-                                className="absolute right-0 top-2 text-sm text-blue-600 hover:underline disabled:text-gray-400"
+                                className="absolute right-0 top-2 text-sm text-blue-600 hover:underline"
                             >
-                                {detecting ? (
-                                    <span className="flex items-center gap-1">
-                                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                                            <circle
-                                                className="opacity-25"
-                                                cx="12" cy="12" r="10"
-                                                stroke="currentColor" strokeWidth="4"
-                                                fill="none"
-                                            />
-                                            <path
-                                                className="opacity-75"
-                                                fill="currentColor"
-                                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                                            />
-                                        </svg>
-                                        Detecting…
-                                    </span>
-                                ) : (
-                                    "Use current location"
-                                )}
+                                {detecting ? "Detecting…" : "Use current location"}
                             </button>
 
-
-                            {/* Suggestions */}
                             {fromFocused && fromSuggestions.length > 0 && (
                                 <div className="absolute bg-white border shadow-md w-full mt-1 rounded z-40 max-h-52 overflow-auto">
                                     {fromSuggestions.map((s, i) => (
@@ -233,12 +175,9 @@ export default function TripForm({
                                 </div>
                             )}
 
-                            {errors.from && (
-                                <p className="text-red-600 text-sm">{errors.from}</p>
-                            )}
+                            {errors.from && <p className="text-red-600 text-sm">{errors.from}</p>}
                         </div>
 
-                        {/* Swap */}
                         <button
                             type="button"
                             onClick={handleSwap}
@@ -250,7 +189,6 @@ export default function TripForm({
                         {/* TO */}
                         <div ref={toRef} className="relative mt-6">
                             <label className="absolute left-0 text-sm text-gray-500">To</label>
-
                             <input
                                 value={to}
                                 onChange={(e) => {
@@ -267,7 +205,6 @@ export default function TripForm({
                                 className="w-full border-b border-gray-300 pt-6 pb-2 bg-transparent focus:outline-none"
                             />
 
-                            {/* Suggestions */}
                             {toFocused && toSuggestions.length > 0 && (
                                 <div className="absolute bg-white border shadow-md w-full mt-1 rounded z-40 max-h-52 overflow-auto">
                                     {toSuggestions.map((s, i) => (
@@ -285,31 +222,26 @@ export default function TripForm({
                                 </div>
                             )}
 
-                            {errors.to && (
-                                <p className="text-red-600 text-sm">{errors.to}</p>
-                            )}
+                            {errors.to && <p className="text-red-600 text-sm">{errors.to}</p>}
                         </div>
                     </div>
                 </div>
 
-                {/* ---------------- WHEN + PREFERENCES ---------------- */}
                 <div className="flex items-center justify-between">
-                    <div className="w-2/3">
-                        <select
-                            value={when}
-                            onChange={(e) => setWhen(e.target.value)}
-                            className="w-full border border-gray-200 rounded px-4 py-2"
-                        >
-                            <option value="leave_now">Leave now</option>
-                            <option value="depart_at">Depart at</option>
-                            <option value="arrive_by">Arrive by</option>
-                        </select>
-                    </div>
+                    <select
+                        value={when}
+                        onChange={(e) => setWhen(e.target.value)}
+                        className="w-2/3 border border-gray-200 rounded px-4 py-2"
+                    >
+                        <option value="leave_now">Leave now</option>
+                        <option value="depart_at">Depart at</option>
+                        <option value="arrive_by">Arrive by</option>
+                    </select>
 
                     <button
                         type="button"
-                        className="text-sm text-gray-600 hover:text-gray-800"
                         onClick={() => setShowPrefs(true)}
+                        className="text-sm text-gray-600 hover:text-gray-800"
                     >
                         Travel preferences
                     </button>

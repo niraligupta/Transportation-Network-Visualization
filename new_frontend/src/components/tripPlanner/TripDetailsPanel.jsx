@@ -43,6 +43,38 @@ export default function TripDetailsPanel({ trip, open, onClose }) {
                         console.log("clicked segment", idx, seg);
                     }} /> */}
                     {/* Map */}
+
+                    <div className="mb-4">
+                        {trip.segments.map((seg, idx) => (
+                            <div key={idx} className="mb-3">
+
+                                {seg.mode === "metro" && (
+                                    <div className="flex items-start gap-3">
+                                        <div
+                                            className="w-3 h-3 rounded-full mt-1"
+                                            style={{ background: seg.route_color }}
+                                        />
+
+                                        <div>
+                                            <div className="font-semibold text-sm">
+                                                {seg.on_stop} → {seg.off_stop}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                                {seg.route_name}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {seg.mode === "walk" && (
+                                    <div className="text-xs text-gray-400 ml-6">
+                                        Walk {seg.distance_meters} m
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+
                     <TripMap segments={trip.segments} />
                 </div>
             </div>

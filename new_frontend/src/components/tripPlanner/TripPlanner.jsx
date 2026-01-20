@@ -1,14 +1,15 @@
+// src/components/TripPlanner.jsx
+
 import React, { useState } from "react";
 import TripForm from "./TripForm";
 import TripResults from "./TripResults";
+import { fetchNearestStop } from "../../api/metroApi";
 
 export default function TripPlanner() {
     const [showResults, setShowResults] = useState(false);
     const [tripResults, setTripResults] = useState([]);
 
-    // -------------------------------
-    // USE CURRENT LOCATION FUNCTION
-    // -------------------------------
+
     const handleUseCurrentLocation = async (setFrom) => {
         if (!navigator.geolocation) {
             alert("Geolocation not supported");
@@ -16,28 +17,26 @@ export default function TripPlanner() {
         }
 
         navigator.geolocation.getCurrentPosition(
-            async (pos) => {
-                const { latitude, longitude } = pos.coords;
-
+            async ({ coords }) => {
                 try {
-                    const res = await fetch(
-                        `http://localhost:8000/api/nearest-stop/?lat=${latitude}&lon=${longitude}`
+                    const stop = await fetchNearestStop(
+                        coords.latitude,
+                        coords.longitude
                     );
-                    const data = await res.json();
 
-                    if (data?.name) {
-                        setFrom(data.name);  // autofill input
-                    } else {
-                        alert("No nearby stop found");
-                    }
-                } catch (err) {
-                    alert("Error fetching nearest stop");
+                    // Backend uses stop_name
+                    setFrom(stop.stop_name);
+                } catch {
+                    alert("No nearby metro station found");
                 }
             },
-            () => {
-                alert("Could not get your location");
-            }
+            () => alert("Could not get your location")
         );
+    };
+
+    const handleSwap = () => {
+        setTripResults([]);
+        setShowResults(false);
     };
 
     return (
@@ -48,16 +47,13 @@ export default function TripPlanner() {
                         setTripResults(results);
                         setShowResults(true);
                     }}
-
-                    // 🔥 THIS WAS MISSING
                     handleUseCurrentLocation={handleUseCurrentLocation}
+                    handleSwap={handleSwap}
                 />
             ) : (
                 <TripResults
                     results={tripResults}
-                    onBack={() => {
-                        setShowResults(false);
-                    }}
+                    onBack={() => setShowResults(false)}
                 />
             )}
         </div>

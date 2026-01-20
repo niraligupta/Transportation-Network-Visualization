@@ -20,7 +20,7 @@ async function fetchJson<T>(endpoint: string): Promise<T> {
 export const transportApi = {
   // Fetch all metro stops
   getMetroStops: (): Promise<MetroStop[]> => {
-    return fetchJson<MetroStop[]>("/metro-stops/");
+    return fetchJson<MetroStop[]>("/metro-stops-list/");
   },
   // Fetch all live metro 
   getLiveMetro: (): Promise<LiveMetro[]> => {

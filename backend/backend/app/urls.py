@@ -1,12 +1,20 @@
 from django.urls import path
-from .views import (
-    MetroStopList, BusStopList, RouteList,
-    get_route_shape, get_route_stops
-)
-from .views import od_flow_months, od_flow_api, passenger_flow_api, top_busiest_stations, line_heatmap, station_hourly_flow,station_summary,dashboard_summary,month_line_station_list,metro_routes,live_metro_positions
+# from .views import (
+#     MetroStopList, BusStopList, RouteList,
+#     get_route_shape, get_route_stops
+# )
+# from .views import PlanTripView, NearestStopView,od_flow_months, od_flow_api, passenger_flow_api, top_busiest_stations, line_heatmap, station_hourly_flow,station_summary,dashboard_summary,month_line_station_list,metro_routes,live_metro_positions
 
+from .views.od_flow_views import od_flow_api,od_flow_months
+from .views.trip_planner_views import PlanTripView,NearestStopView,MetroStops
+from .views.dashboard_views import month_line_station_list, dashboard_summary,line_heatmap,top_busiest_stations,station_hourly_flow,station_summary
+from.views.passenger_flow_views import passenger_flow_api
+from.views.live_metro_flow_views import get_route_stops, get_route_shape, MetroStopList,BusStopList,live_metro_positions, metro_routes,RouteList
 urlpatterns = [
-    path("metro-stops/", MetroStopList.as_view()),
+    path("plan_trip/", PlanTripView.as_view()),
+    path("nearest-stop/", NearestStopView.as_view()),
+    path("metro-stops-list/", MetroStopList.as_view()),
+    path("metro-stops/", MetroStops.as_view()),
     path("bus-stops/", BusStopList.as_view()),
     path("routes/", RouteList.as_view()),
     path("metro-routes/", metro_routes),
