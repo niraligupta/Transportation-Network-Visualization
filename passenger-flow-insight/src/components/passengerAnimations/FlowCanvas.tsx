@@ -4,43 +4,61 @@ import React, { useRef, useEffect, useCallback } from "react";
 import { ApiStation, StationEntry, Particle } from "@/lib/passengerFlowApi";
 import { useTheme } from "next-themes";
 
-/* ================= METRO ICON ================= */
-const metroIcon = new Image();
-metroIcon.src = "/icons/metro.png";
-
 /* ================= TYPES ================= */
+export type VisualizationMode = "BOARDING" | "ALIGHTING" | "FLOW";
+
 interface RouteShape {
     route_id: string;
     color: string;
     path: [number, number][];
 }
 
-
-/* ================= PROPS ================= */
 interface FlowCanvasProps {
     routes?: RouteShape[];
     stations: ApiStation[];
     currentData: StationEntry[];
     maxFlow: number;
     isPlaying: boolean;
+    mode: VisualizationMode;
     leafletProject: (lat: number, lon: number) => { x: number; y: number };
 }
-/* ================= FLOW COLOR SCALE ================= */
+
+/* ================= HELPERS ================= */
 function getFlowColor(intensity: number) {
-    // intensity must be between 0 → 1
-    if (intensity <= 0.2) return "hsl(145, 80%, 50%)"; // Very Low (Green)
-    if (intensity <= 0.4) return "hsl(80, 90%, 55%)";  // Low (Yellow-Green)
-    if (intensity <= 0.6) return "hsl(50, 100%, 55%)"; // Medium (Yellow)
-    if (intensity <= 0.8) return "hsl(30, 100%, 55%)"; // High (Orange)
-    return "hsl(0, 100%, 60%)";                        // Very High (Red)
+    if (intensity <= 0.2) return "hsl(145, 80%, 50%)";
+    if (intensity <= 0.4) return "hsl(80, 90%, 55%)";
+    if (intensity <= 0.6) return "hsl(50, 100%, 55%)";
+    if (intensity <= 0.8) return "hsl(30, 100%, 55%)";
+    return "hsl(0, 100%, 60%)";
 }
 
+function getStationData(
+    station: ApiStation,
+    data: StationEntry[]
+) {
+    return (
+        data.find((d) => d.station === station.name) || {
+            entry: 0,
+            exit: 0,
+        }
+    );
+}
+
+function getCircleRadius(value: number, max: number) {
+    const minR = 4;
+    const maxR = 18;
+    if (max === 0) return minR;
+    return minR + (value / max) * (maxR - minR);
+}
+
+/* ================= COMPONENT ================= */
 const FlowCanvas: React.FC<FlowCanvasProps> = ({
     routes,
     stations,
     currentData,
     maxFlow,
     isPlaying,
+    mode,
     leafletProject,
 }) => {
     const { resolvedTheme } = useTheme();
@@ -54,11 +72,10 @@ const FlowCanvas: React.FC<FlowCanvasProps> = ({
     const mouseRef = useRef<{ x: number; y: number } | null>(null);
     const hoveredStationRef = useRef<ApiStation | null>(null);
 
-    /* ================= MOUSE EVENTS (🔥 REQUIRED) ================= */
+    /* ================= MOUSE ================= */
     const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
         const rect = canvasRef.current?.getBoundingClientRect();
         if (!rect) return;
-
         mouseRef.current = {
             x: e.clientX - rect.left,
             y: e.clientY - rect.top,
@@ -70,248 +87,165 @@ const FlowCanvas: React.FC<FlowCanvasProps> = ({
         hoveredStationRef.current = null;
     };
 
-    /* ================= STATION FLOW ================= */
-    const getStationFlow = useCallback(
-        (name: string) => {
-            const row = currentData.find((d) => d.station === name);
-            return row ? row.entry + row.exit : 0;
-        },
-        [currentData]
-    );
-    const stationFlowMap = useCallback(() => {
-        const map: Record<string, { entry: number; exit: number }> = {};
-        currentData.forEach((d) => {
-            map[d.station] = {
-                entry: d.entry,
-                exit: d.exit,
-            };
-        });
-        return map;
-    }, [currentData]);
-
     /* ================= PARTICLES ================= */
     const spawnParticles = useCallback(() => {
-        if (!isPlaying || maxFlow === 0 || !routes) return;
+        if (!isPlaying || mode !== "FLOW" || !routes || maxFlow === 0) return;
 
-        const flowMap: Record<string, { entry: number; exit: number }> = {};
-        currentData.forEach((d) => {
-            flowMap[d.station] = { entry: d.entry, exit: d.exit };
-        });
+        const totalFlow =
+            currentData.reduce((s, d) => s + d.entry + d.exit, 0) || 1;
 
         routes.forEach((route) => {
             if (!route.path || route.path.length < 2) return;
 
-            // route-level intensity
-            let routeFlow = 0;
+            const intensity = Math.min(totalFlow / maxFlow, 1);
 
-            route.path.forEach(([lat, lon]) => {
-                stations.forEach((s) => {
-                    if (
-                        Math.abs(s.lat - lat) < 0.002 &&
-                        Math.abs(s.lon - lon) < 0.002
-                    ) {
-                        const f = flowMap[s.name];
-                        if (f) routeFlow += f.entry + f.exit;
-                    }
-                });
-            });
-
-            const intensity = Math.min(routeFlow / maxFlow, 1);
-
-
-            // 🔥 particle spawn probability
-            if (Math.random() < intensity * 0.08) {
-                const segmentIndex = Math.floor(
-                    Math.random() * (route.path.length - 1)
-                );
-
-                const entryExitRatio =
-                    Math.random() < 0.5;
-
+            if (Math.random() < intensity * 0.15) {
                 particlesRef.current.push({
                     id: particleIdRef.current++,
                     routeId: route.route_id,
-                    path: route.path,          // 🔒 STRICT LINE PATH
-                    index: segmentIndex,       // 🔒 RANDOM LINE SEGMENT
-                    progress: Math.random(),   // smooth start
-                    speed: 0.003 + intensity * 0.01,
+                    path: route.path,
+                    index: Math.floor(Math.random() * (route.path.length - 1)),
+                    progress: Math.random(),
+                    speed: 0.01 + intensity * 0.03,
                     intensity,
-                    isEntry: entryExitRatio,
+                    isEntry: Math.random() < 0.5,
                 });
             }
         });
 
-        if (particlesRef.current.length > 1200) {
-            particlesRef.current = particlesRef.current.slice(-800);
+        if (particlesRef.current.length > 1500) {
+            particlesRef.current = particlesRef.current.slice(-1000);
         }
-    }, [routes, stations, currentData, maxFlow, isPlaying]);
+    }, [routes, currentData, maxFlow, isPlaying, mode]);
 
-
-
-
-
-    /* ================= DRAW LOOP ================= */
+    /* ================= DRAW ================= */
     const draw = useCallback(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
-
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        /* background */
+        /* Background */
         ctx.fillStyle = isDark
             ? "rgba(10,14,23,0.25)"
             : "rgba(240,245,250,0.25)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        /* ================= METRO LINES (SOLID, NO BORDER) ================= */
-        if (Array.isArray(routes)) {
-            routes.forEach((route) => {
-                if (
-                    route.color === "#000000" ||
-                    route.color === "black" ||
-                    route.color === "#0b1220"
-                ) {
-                    return;
-                }
-                if (!route.path || route.path.length < 2) return;
-
-                ctx.beginPath();
-                route.path.forEach(([a, b], i) => {
-                    const lat = Math.abs(a) <= 90 ? a : b;
-                    const lon = Math.abs(a) <= 90 ? b : a;
-                    const { x, y } = leafletProject(lat, lon);
-
-                    if (i === 0) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
-                });
-
-                ctx.strokeStyle = route.color;
-                ctx.lineWidth = 6;
-                ctx.lineCap = "round";
-                ctx.lineJoin = "round";
-                ctx.stroke();
-            });
-        }
-
-        /* ================= HOVER DETECTION ================= */
+        /* ================= STATION CIRCLES ================= */
         hoveredStationRef.current = null;
-        if (mouseRef.current) {
-            for (const s of stations) {
-                const { x, y } = leafletProject(s.lat, s.lon);
-                if (
-                    Math.abs(x - mouseRef.current.x) < 10 &&
-                    Math.abs(y - mouseRef.current.y) < 10
-                ) {
-                    hoveredStationRef.current = s;
-                    break;
-                }
-            }
-        }
 
-        /* ================= PARTICLES ================= */
-        particlesRef.current = particlesRef.current.filter((p) => {
-            const path = p.path;
-            if (p.index >= path.length - 1) return false;
+        stations.forEach((station) => {
+            const { x, y } = leafletProject(station.lat, station.lon);
+            const data = getStationData(station, currentData);
 
-            p.progress += p.speed;
-
-            if (p.progress >= 1) {
-                p.progress = 0;
-                p.index++;
+            // 🔹 Size depends on visualization mode
+            let value = 0;
+            if (mode === "BOARDING") {
+                value = data.entry;
+            } else if (mode === "ALIGHTING") {
+                value = data.exit;
+            } else {
+                value = data.entry + data.exit;
             }
 
-            const [a1, b1] = path[p.index];
-            const [a2, b2] = path[p.index + 1];
+            // 🔹 Color ALWAYS depends on flow intensity
+            const totalFlow = data.entry + data.exit;
+            const intensity = maxFlow > 0 ? totalFlow / maxFlow : 0;
+            const color = getFlowColor(intensity);
 
-            const lat1 = Math.abs(a1) <= 90 ? a1 : b1;
-            const lon1 = Math.abs(a1) <= 90 ? b1 : a1;
-            const lat2 = Math.abs(a2) <= 90 ? a2 : b2;
-            const lon2 = Math.abs(a2) <= 90 ? b2 : a2;
 
-            const from = leafletProject(lat1, lon1);
-            const to = leafletProject(lat2, lon2);
-
-            const x = from.x + (to.x - from.x) * p.progress;
-            const y = from.y + (to.y - from.y) * p.progress;
-            const baseColor = getFlowColor(p.intensity);
-
-            ctx.fillStyle = p.isEntry
-                ? baseColor
-                : baseColor.replace(")", ", 0.65)").replace("hsl", "hsla");
-
+            const radius = getCircleRadius(value, maxFlow);
 
             ctx.beginPath();
-            ctx.arc(x, y, 3 + p.intensity * 3, 0, Math.PI * 2);
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = color;
             ctx.fill();
+            ctx.shadowBlur = 0;
 
-            return true;
+            /* Hover detect */
+            if (
+                mouseRef.current &&
+                Math.hypot(
+                    x - mouseRef.current.x,
+                    y - mouseRef.current.y
+                ) <= radius + 4
+            ) {
+                hoveredStationRef.current = station;
+            }
         });
 
+        /* ================= PARTICLES ================= */
+        if (mode === "FLOW") {
+            particlesRef.current = particlesRef.current.filter((p) => {
+                if (p.index >= p.path.length - 1) return false;
 
-        /* ================= STATIONS ================= */
-        if (metroIcon.complete) {
-            stations.forEach((s) => {
-                const { x, y } = leafletProject(s.lat, s.lon);
-                ctx.drawImage(metroIcon, x - 7, y - 7, 14, 14);
+                p.progress += p.speed;
+                if (p.progress >= 1) {
+                    p.progress = 0;
+                    p.index++;
+                }
+
+                const [a1, b1] = p.path[p.index];
+                const [a2, b2] = p.path[p.index + 1];
+
+                const from = leafletProject(a1, b1);
+                const to = leafletProject(a2, b2);
+
+                const x = from.x + (to.x - from.x) * p.progress;
+                const y = from.y + (to.y - from.y) * p.progress;
+
+                const color = getFlowColor(p.intensity);
+
+                ctx.beginPath();
+                ctx.arc(x, y, 3 + p.intensity * 3, 0, Math.PI * 2);
+                ctx.fillStyle = color;
+                ctx.fill();
+
+                return true;
             });
-        }
-        const hoveredFlow =
-            hoveredStationRef.current
-                ? currentData.find(
-                    (d) => d.station === hoveredStationRef.current?.name
-                )
-                : null;
 
-        /* ================= STATION TOOLTIP ================= */
+            spawnParticles();
+        }
+
+        /* ================= TOOLTIP ================= */
         if (hoveredStationRef.current) {
             const s = hoveredStationRef.current;
-            const flow = hoveredFlow;
+            const d = getStationData(s, currentData);
             const { x, y } = leafletProject(s.lat, s.lon);
 
             const lines = [
                 s.name,
-                ` Boarding: ${flow?.entry ?? 0}`,
-                ` Alighting: ${flow?.exit ?? 0}`,
+                `Boarding: ${d.entry}`,
+                `Alighting: ${d.exit}`,
             ];
 
             ctx.font = "12px Inter, sans-serif";
             const padding = 6;
             const lineHeight = 16;
-            const width = Math.max(
-                ...lines.map((l) => ctx.measureText(l).width)
-            );
-
-            const boxWidth = width + padding * 2;
-            const boxHeight = lines.length * lineHeight + padding * 2;
+            const width = Math.max(...lines.map((l) => ctx.measureText(l).width));
 
             ctx.fillStyle = "rgba(0,0,0,0.8)";
-            ctx.fillRect(x + 12, y - boxHeight - 12, boxWidth, boxHeight);
+            ctx.fillRect(x + 12, y - 60, width + padding * 2, 56);
 
             ctx.fillStyle = "#fff";
-            lines.forEach((text, i) => {
-                ctx.fillText(
-                    text,
-                    x + 12 + padding,
-                    y - boxHeight + padding + (i + 1) * lineHeight
-                );
+            lines.forEach((t, i) => {
+                ctx.fillText(t, x + 12 + padding, y - 36 + i * lineHeight);
             });
         }
 
-
-        spawnParticles();
         animationRef.current = requestAnimationFrame(draw);
     }, [
-        routes,
         stations,
-        spawnParticles,
-        isDark,
-        leafletProject,
-        getStationFlow,
+        currentData,
         maxFlow,
-        isPlaying,
+        mode,
+        spawnParticles,
+        leafletProject,
+        isDark,
     ]);
 
     /* ================= LIFECYCLE ================= */
@@ -342,7 +276,7 @@ const FlowCanvas: React.FC<FlowCanvasProps> = ({
             className="absolute inset-0 z-[500]"
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
-            style={{ pointerEvents: "auto" }}   // 🔥 IMPORTANT
+            style={{ pointerEvents: "auto" }}
         />
     );
 };

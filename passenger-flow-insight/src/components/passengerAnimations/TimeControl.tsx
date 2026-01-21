@@ -25,7 +25,7 @@ const TimeControl: React.FC<TimeControlProps> = ({
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      className="glass-panel p-4 space-y-4"
+      className="glass-panel p-7 space-y-4"
     >
       {/* Header */}
       <div className="flex items-center justify-between">

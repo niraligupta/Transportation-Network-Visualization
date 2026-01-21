@@ -96,7 +96,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
-            className="glass-panel p-4"
+            className="glass-panel p-8"
         >
             <div className="flex items-center gap-2 mb-4">
                 <div className="w-2 h-2 rounded-full bg-flow-very-low animate-pulse" />
@@ -115,7 +115,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.3 + index * 0.1 }}
-                        className={`${bgColor} rounded-lg p-3 border border-border/30`}
+                        className={`${bgColor} rounded-lg p-6 border border-border/30`}
                     >
                         <div className="flex items-center gap-1.5 mb-1">
                             <Icon className={`w-3.5 h-3.5 ${color}`} />
@@ -140,7 +140,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
-                className="mt-3 p-3 bg-primary/10 rounded-lg border border-primary/30"
+                className="mt-3 p-6 bg-primary/10 rounded-lg border border-primary/30"
             >
                 <div className="flex items-center gap-1.5 mb-1">
                     <Crown className="w-3.5 h-3.5 text-primary" />

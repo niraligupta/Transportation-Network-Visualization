@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import {
@@ -26,12 +28,19 @@ import {
   fetchTopBusiestStations,
   fetchLineHeatmap,
 } from "@/lib/api";
+
 import PassengerAnimation from "@/components/passengerAnimations/PassengerAnimation";
+import MetroVisualization from "@/components/odBaseData/MetroVisualization";
+/* ================= VIEW MODE ================= */
+type ViewMode = "HOME" | "PASSENGER_FLOW" | "OD";
 
 const Index = () => {
   const { theme } = useTheme();
 
-  /* ================= FILTER STATE (SOURCE OF TRUTH) ================= */
+  /* ================= VIEW STATE ================= */
+  const [view, setView] = useState<ViewMode>("HOME");
+
+  /* ================= FILTER STATE ================= */
   const [month, setMonth] = useState("december_2024");
   const [line, setLine] = useState("LINE02");
   const [station, setStation] = useState<string>("");
@@ -94,108 +103,187 @@ const Index = () => {
   return (
     <div className="min-h-screen gradient-bg">
 
-      {/* ---------- HEADER ---------- */}
+      {/* ================= HEADER ================= */}
       <header className="border-b border-border/50 backdrop-blur-xl bg-background/80 sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/20">
-              <Train className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold">Metro Flow Analytics</h1>
-              <p className="text-sm text-muted-foreground">
-                Delhi Metro Passenger Data
-              </p>
-            </div>
-          </div>
+        <div className="w-full px-6">
+          <div className="max-w-[1600px] mx-auto py-4 flex justify-between items-center">
 
-          <div className="flex items-center gap-4">
-            <MetroLineStationSelector
-              selectedMonth={month}
-              selectedLine={line}
-              selectedStation={station}
-              onMonthChange={setMonth}
-              onLineChange={setLine}
-              onStationChange={setStation}
-            />
-            <ThemeToggle />
+            {/* Logo */}
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/20">
+                <Train className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">Metro Flow Analytics</h1>
+                <p className="text-sm text-muted-foreground">
+                  Delhi Metro Passenger Data
+                </p>
+              </div>
+            </div>
+
+            {/* Navigation */}
+            <div className="flex items-center gap-4">
+              <div className="flex rounded-lg border border-border bg-card/50 overflow-hidden">
+                <button
+                  onClick={() => setView("HOME")}
+                  className={`px-4 py-2 text-sm flex items-center gap-2
+            ${view === "HOME"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted"}
+          `}
+                >
+                  <Train className="w-4 h-4" />
+                  Home
+                </button>
+
+                <button
+                  onClick={() => setView("PASSENGER_FLOW")}
+                  className={`px-4 py-2 text-sm flex items-center gap-2
+            ${view === "PASSENGER_FLOW"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted"}
+          `}
+                >
+                  <Activity className="w-4 h-4" />
+                  Passenger Flow
+                </button>
+
+                <button
+                  onClick={() => setView("OD")}
+                  className={`px-4 py-2 text-sm flex items-center gap-2
+            ${view === "OD"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted"}
+          `}
+                >
+                  <Map className="w-4 h-4" />
+                  OD Data
+                </button>
+              </div>
+
+              <ThemeToggle />
+            </div>
           </div>
         </div>
-      </header>
-      {/* ---------- PASSENGER ANIMATION (NEW) ---------- */}
-      <PassengerAnimation />
-      {/* ---------- MAIN ---------- */}
-      <main className="container mx-auto px-6 py-8">
+      </header >
 
-        {/* NETWORK OVERVIEW */}
-        <section className="mb-8">
-          <h2 className="text-lg font-semibold mb-4 flex gap-2 items-center">
-            <Activity className="w-5 h-5" />
-            Network Overview
-          </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard title="Total Boarding" value={dashboard?.total_entry || 0} icon={<ArrowUpRight />} variant="entry" />
-            <StatCard title="Total Alighting" value={dashboard?.total_exit || 0} icon={<ArrowDownRight />} variant="exit" />
-            <StatCard title="Active Stations" value={dashboard?.total_stations || 0} icon={<Train />} />
-            <StatCard title="Total Passengers" value={dashboard?.total_passengers || 0} icon={<Users />} />
+      {/* ================= PASSENGER FLOW VIEW ================= */}
+      {/* {view === "PASSENGER_FLOW" && (
+        <div className="w-full px-6">
+          <div className="max-w-[1600px] mx-auto">
+            <PassengerAnimation />
           </div>
-        </section>
+        </div>
+      )} */}
+      {view === "PASSENGER_FLOW" && (
+        <PassengerAnimation />
 
-        {/* STATION SUMMARY */}
-        {stationSummary && (
-          <section className="mb-8">
-            <h2 className="text-lg font-semibold mb-4 flex gap-2 items-center">
-              <Train className="w-5 h-5" />
-              {station} Station
-            </h2>
+      )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard title="Station Boarding" value={stationSummary.total_entry} icon={<ArrowUpRight />} variant="entry" />
-              <StatCard title="Station Alighting" value={stationSummary.total_exit} icon={<ArrowDownRight />} variant="exit" />
-              <StatCard title="Peak Hour" value={`${String(stationSummary.peak_hour).padStart(2, "0")}:00`} icon={<Clock />} />
-              <StatCard title="Avg Hourly Flow" value={stationSummary.avg_hourly_flow} icon={<Activity />} />
+
+      {/* ================= OD DATA VIEW ================= */}
+      {
+        view === "OD" && (
+          <MetroVisualization />
+          // <div className="flex items-center justify-center h-[70vh] text-muted-foreground text-lg">
+          //   OD Data visualization coming soon…
+          // </div>
+        )
+      }
+
+      {/* ================= HOME DASHBOARD ================= */}
+      {
+        view === "HOME" && (
+
+          <main className="w-full px-6 py-8">
+            <div className="max-w-[1600px] mx-auto">
+
+              {/* Station Selector */}
+              <div className="pb-4">
+                <MetroLineStationSelector
+                  selectedMonth={month}
+                  selectedLine={line}
+                  selectedStation={station}
+                  onMonthChange={setMonth}
+                  onLineChange={setLine}
+                  onStationChange={setStation}
+                />
+              </div>
+
+              {/* NETWORK OVERVIEW */}
+              <section className="mb-8">
+                <h2 className="text-lg font-semibold mb-4 flex gap-2 items-center">
+                  <Activity className="w-5 h-5" />
+                  Network Overview
+                </h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <StatCard title="Total Boarding" value={dashboard?.total_entry || 0} icon={<ArrowUpRight />} variant="entry" />
+                  <StatCard title="Total Alighting" value={dashboard?.total_exit || 0} icon={<ArrowDownRight />} variant="exit" />
+                  <StatCard title="Active Stations" value={dashboard?.total_stations || 0} icon={<Train />} />
+                  <StatCard title="Total Passengers" value={dashboard?.total_passengers || 0} icon={<Users />} />
+                </div>
+              </section>
+
+              {/* STATION SUMMARY */}
+              {stationSummary && (
+                <section className="mb-8">
+                  <h2 className="text-lg font-semibold mb-4 flex gap-2 items-center">
+                    <Train className="w-5 h-5" />
+                    {station} Station
+                  </h2>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <StatCard title="Station Boarding" value={stationSummary.total_entry} icon={<ArrowUpRight />} variant="entry" />
+                    <StatCard title="Station Alighting" value={stationSummary.total_exit} icon={<ArrowDownRight />} variant="exit" />
+                    <StatCard title="Peak Hour" value={`${String(stationSummary.peak_hour).padStart(2, "0")}:00`} icon={<Clock />} />
+                    <StatCard title="Avg Hourly Flow" value={stationSummary.avg_hourly_flow} icon={<Activity />} />
+                  </div>
+                </section>
+              )}
+
+              {/* CHARTS & HEATMAP */}
+              <Tabs defaultValue="charts" className="w-full">
+                <TabsList className="mb-4 bg-card/50 border border-border">
+                  <TabsTrigger value="charts" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <Activity className="w-4 h-4 mr-2" />Flow Charts
+                  </TabsTrigger>
+                  <TabsTrigger value="heatmap" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <Map className="w-4 h-4 mr-2" />Heatmap
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="charts">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <HourlyFlowChart data={hourlyData} theme={theme} />
+                    <BoardingAlightingChart data={hourlyData} theme={theme} />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="heatmap">
+                  <PassengerHeatmap
+                    data={heatmap}
+                    selectedStation={station}
+                    onStationClick={setStation}
+                    theme={theme}
+                  />
+                </TabsContent>
+              </Tabs>
+
+              {/* TOP STATIONS */}
+              <section className="mt-8">
+                <StationRankingTable
+                  data={topStations}
+                  selectedStation={station}
+                  onStationClick={setStation}
+                />
+              </section>
             </div>
-          </section>
-        )}
-
-        {/* CHARTS & HEATMAP */}
-        <Tabs defaultValue="charts" className="w-full">
-          <TabsList className="mb-4 bg-card/50 border border-border">
-            <TabsTrigger value="charts" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Activity className="w-4 h-4 mr-2" />Flow Charts</TabsTrigger>
-            <TabsTrigger value="heatmap" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Map className="w-4 h-4 mr-2" />Heatmap</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="charts">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <HourlyFlowChart data={hourlyData} theme={theme} />
-              <BoardingAlightingChart data={hourlyData} theme={theme} />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="heatmap">
-            <PassengerHeatmap
-              data={heatmap}
-              selectedStation={station}
-              onStationClick={setStation}
-              theme={theme}
-            />
-          </TabsContent>
-        </Tabs>
-
-        {/* TOP STATIONS */}
-        <section className="mt-8">
-          <StationRankingTable
-            data={topStations}
-            selectedStation={station}
-            onStationClick={setStation}
-          />
-        </section>
-
-      </main>
-    </div>
+          </main>
+        )
+      }
+    </div >
   );
 };
 

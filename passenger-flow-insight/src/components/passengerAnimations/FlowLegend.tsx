@@ -18,9 +18,9 @@ const FlowLegend: React.FC = () => {
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: 0.3 }}
-      className="glass-panel p-4"
+      className="glass-panel p-7"
     >
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 mb-7">
         <Activity className="w-5 h-5 text-primary" />
         <h3 className="font-display text-sm font-semibold text-primary neon-text uppercase tracking-wider">
           Flow Intensity

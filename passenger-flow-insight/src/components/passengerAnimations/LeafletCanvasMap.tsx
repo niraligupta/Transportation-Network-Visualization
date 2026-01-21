@@ -1,10 +1,12 @@
+"use client";
+
 import React, { useEffect, useState } from "react";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import type { LatLngExpression } from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 import { ApiStation, StationEntry, MetroRoute } from "@/lib/passengerFlowApi";
-import FlowCanvas from "./FlowCanvas";
+import FlowCanvas, { VisualizationMode } from "./FlowCanvas";
 
 /* ================= PROPS ================= */
 interface Props {
@@ -13,6 +15,7 @@ interface Props {
     currentData: StationEntry[];
     maxFlow: number;
     isPlaying: boolean;
+    mode: VisualizationMode; // 🔥 REQUIRED
 }
 
 /* ================= CANVAS OVERLAY ================= */
@@ -22,15 +25,18 @@ const CanvasOverlay: React.FC<Props> = ({
     currentData,
     maxFlow,
     isPlaying,
+    mode,
 }) => {
     const map = useMap();
-    const [, setUpdate] = useState(0);
+    const [, forceUpdate] = useState(0);
 
-    // Force re-render on map move/zoom
+    /* Re-sync canvas on map movement */
     useEffect(() => {
-        const handleMove = () => setUpdate((u) => u + 1);
+        const handleMove = () => forceUpdate((v) => v + 1);
+
         map.on("move", handleMove);
         map.on("zoom", handleMove);
+
         return () => {
             map.off("move", handleMove);
             map.off("zoom", handleMove);
@@ -52,11 +58,13 @@ const CanvasOverlay: React.FC<Props> = ({
             }}
         >
             <FlowCanvas
+                key={`${mode}-${map.getZoom()}`}
                 routes={routes}
                 stations={stations}
                 currentData={currentData}
                 maxFlow={maxFlow}
                 isPlaying={isPlaying}
+                mode={mode}
                 leafletProject={leafletProject}
             />
         </div>
@@ -70,6 +78,7 @@ const LeafletCanvasMap: React.FC<Props> = ({
     currentData,
     maxFlow,
     isPlaying,
+    mode,
 }) => {
     const DELHI_CENTER: LatLngExpression = [28.6139, 77.209];
 
@@ -80,11 +89,11 @@ const LeafletCanvasMap: React.FC<Props> = ({
                 zoom={11}
                 minZoom={9}
                 maxZoom={15}
+                zoomControl
                 style={{ width: "100%", height: "100%" }}
-                zoomControl={true}
             >
                 <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    attribution='&copy; OpenStreetMap contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
 
@@ -94,6 +103,7 @@ const LeafletCanvasMap: React.FC<Props> = ({
                     currentData={currentData}
                     maxFlow={maxFlow}
                     isPlaying={isPlaying}
+                    mode={mode}
                 />
             </MapContainer>
         </div>

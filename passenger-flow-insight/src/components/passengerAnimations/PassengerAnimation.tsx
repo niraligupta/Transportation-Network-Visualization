@@ -14,6 +14,10 @@ import TimeControl from "./TimeControl";
 import StationList from "./StationList";
 import FlowLegend from "./FlowLegend";
 import StatsPanel from "./statsPanel";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowUpRight, ArrowDownRight, Activity } from "lucide-react";
+import type { VisualizationMode } from "./FlowCanvas";
+
 
 // Lazy load the map component to avoid SSR issues
 const LeafletCanvasMap = React.lazy(() => import("./LeafletCanvasMap"));
@@ -28,6 +32,7 @@ const PassengerAnimation: React.FC = () => {
     const [speed, setSpeed] = useState(1);
     const [selectedStation, setSelectedStation] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+    const [mode, setMode] = useState<VisualizationMode>("BOARDING");
 
     /* ================= FETCH DATA ================= */
     useEffect(() => {
@@ -97,7 +102,7 @@ const PassengerAnimation: React.FC = () => {
     return (
         <div className="min-h-screen bg-background p-4 lg:p-6">
             {/* Header */}
-            <motion.header
+            {/* <motion.header
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="mb-4 lg:mb-6"
@@ -129,7 +134,7 @@ const PassengerAnimation: React.FC = () => {
                         </div>
                     </div>
                 </div>
-            </motion.header>
+            </motion.header> */}
 
             {/* Main Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
@@ -155,6 +160,41 @@ const PassengerAnimation: React.FC = () => {
 
                 {/* MAP + CANVAS */}
                 <main className="lg:col-span-6 order-1 lg:order-2">
+                    <Tabs
+                        value={mode}
+                        onValueChange={(value) => setMode(value as VisualizationMode)}
+                        className="w-full"
+                    >
+                        <TabsList className="mb-4 bg-card/50 border border-border">
+                            <TabsTrigger
+                                value="BOARDING"
+                                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                            >
+                                <ArrowUpRight className="w-4 h-4 mr-2" />
+                                Boarding Passenger
+                            </TabsTrigger>
+
+                            <TabsTrigger
+                                value="ALIGHTING"
+                                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                            >
+                                <ArrowDownRight className="w-4 h-4 mr-2" />
+                                Alighting Passenger
+                            </TabsTrigger>
+
+                            <TabsTrigger
+                                value="FLOW"
+                                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                            >
+                                <Activity className="w-4 h-4 mr-2" />
+                                Passenger Flow
+                            </TabsTrigger>
+
+
+                        </TabsList>
+                    </Tabs>
+
+
                     <motion.div
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -177,7 +217,9 @@ const PassengerAnimation: React.FC = () => {
                                 currentData={hourData}
                                 maxFlow={flowData.maxFlow}
                                 isPlaying={isPlaying}
+                                mode={mode}
                             />
+
                         </React.Suspense>
 
                         {/* Status Badges */}
