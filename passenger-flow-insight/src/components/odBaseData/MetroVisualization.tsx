@@ -5,6 +5,9 @@ import { ControlsPanel } from './ControlsPanel';
 import { Train, Loader2 } from 'lucide-react';
 import { useMemo } from 'react';
 import { useMetroData } from '../../hooks/useMetroData';
+
+
+
 export default function MetroVisualization() {
   const {
     stations,
@@ -18,6 +21,7 @@ export default function MetroVisualization() {
     globalMinPassengers,
     availableMonths,
   } = useMetroData();
+
 
   /* -------------------------------------------------
      ORIGIN STATIONS ONLY (from API arcs)

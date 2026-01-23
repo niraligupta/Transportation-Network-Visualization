@@ -95,8 +95,6 @@ class PassengerFlow(models.Model):
 
 
 
-
-
 class ODPassengerFlow(models.Model):
     month = models.CharField(max_length=20, db_index=True)
     origin_station = models.CharField(max_length=200, db_index=True)

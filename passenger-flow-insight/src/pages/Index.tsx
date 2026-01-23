@@ -20,6 +20,7 @@ import { StationRankingTable } from "@/components/StationRankingTable";
 import { PassengerHeatmap } from "@/components/PassengerHeatmap";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { FlowViewMode } from "@/types/metro";
 
 import {
   fetchDashboardSummary,
@@ -31,6 +32,11 @@ import {
 
 import PassengerAnimation from "@/components/passengerAnimations/PassengerAnimation";
 import MetroVisualization from "@/components/odBaseData/MetroVisualization";
+import OriginPassengerFlow from "@/components/odPassengerFlow/originPassengerFlow";
+import DestinationPassengerFlow from "@/components/odPassengerFlow/destinationPassengerFlow";
+import BothPassengerFlow from "@/components/odPassengerFlow/BothPassengerFlow";
+
+
 /* ================= VIEW MODE ================= */
 type ViewMode = "HOME" | "PASSENGER_FLOW" | "OD";
 
@@ -52,6 +58,8 @@ const Index = () => {
   const [topStations, setTopStations] = useState<any[]>([]);
   const [heatmap, setHeatmap] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [flowView, setFlowView] = useState<FlowViewMode | "od">("od");
+
 
   /* ================= STATION APIs ================= */
   useEffect(() => {
@@ -149,7 +157,11 @@ const Index = () => {
                 </button>
 
                 <button
-                  onClick={() => setView("OD")}
+                  onClick={() => {
+                    setView("OD");
+                    setFlowView("od");
+                  }}
+
                   className={`px-4 py-2 text-sm flex items-center gap-2
             ${view === "OD"
                       ? "bg-primary text-primary-foreground"
@@ -160,6 +172,43 @@ const Index = () => {
                   OD Data
                 </button>
               </div>
+              {/* OD Flow Toggle (only when OD view is active) */}
+              {view === "OD" && (
+                <div className="flex gap-2 glass-panel p-1 rounded-xl">
+                  <button
+                    onClick={() => setFlowView("origin")}
+                    className={`px-3 py-1 rounded-md text-xs
+        ${flowView === "origin"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-muted"}
+      `}
+                  >
+                    Origin
+                  </button>
+
+                  <button
+                    onClick={() => setFlowView("destination")}
+                    className={`px-3 py-1 rounded-md text-xs
+        ${flowView === "destination"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-muted"}
+      `}
+                  >
+                    Destination
+                  </button>
+
+                  <button
+                    onClick={() => setFlowView("both")}
+                    className={`px-3 py-1 rounded-md text-xs
+        ${flowView === "both"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-muted"}
+      `}
+                  >
+                    Both
+                  </button>
+                </div>
+              )}
 
               <ThemeToggle />
             </div>
@@ -169,13 +218,6 @@ const Index = () => {
 
 
       {/* ================= PASSENGER FLOW VIEW ================= */}
-      {/* {view === "PASSENGER_FLOW" && (
-        <div className="w-full px-6">
-          <div className="max-w-[1600px] mx-auto">
-            <PassengerAnimation />
-          </div>
-        </div>
-      )} */}
       {view === "PASSENGER_FLOW" && (
         <PassengerAnimation />
 
@@ -183,14 +225,17 @@ const Index = () => {
 
 
       {/* ================= OD DATA VIEW ================= */}
-      {
-        view === "OD" && (
-          <MetroVisualization />
-          // <div className="flex items-center justify-center h-[70vh] text-muted-foreground text-lg">
-          //   OD Data visualization coming soon…
-          // </div>
-        )
-      }
+      {view === "OD" && (
+        <>
+          {flowView === "od" && <MetroVisualization />}
+
+          {flowView === "origin" && <OriginPassengerFlow />}
+          {flowView === "destination" && <DestinationPassengerFlow />}
+          {flowView === "both" && <BothPassengerFlow />}
+        </>
+      )}
+
+
 
       {/* ================= HOME DASHBOARD ================= */}
       {
