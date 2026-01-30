@@ -1,11 +1,42 @@
-// src/components/TripResults.jsx
-
 import React, { useState } from "react";
 import TripResultCard from "./TripResultCard";
 import TripDetailsPanel from "./TripDetailsPanel";
+import { planTrip } from "../../api/metroApi";
 
-export default function TripResults({ results = [], onBack }) {
-    // const [selectedTrip, setSelectedTrip] = useState(null);
+
+export default function TripResults({ results = [],
+    onBack,
+    from,
+    to,
+    when,
+    departAt,
+    preference = "shortest",
+    setTripResults,
+    setPreference }) {
+    const [selectedTrip, setSelectedTrip] = useState(null);
+    const safeResults = Array.isArray(results) ? results : [];
+    async function changePreference(type) {
+        if (!from || !to || setTripResults === undefined || setPreference === undefined) {
+            console.error("Missing required props for preference change:", { from, to, setTripResults, setPreference });
+            alert("Cannot change route: missing trip details. Please plan a new trip.");
+            return;
+        }
+
+        try {
+            setPreference(type);
+            const trips = await planTrip({
+                from_location: from,
+                to_location: to,
+                when,
+                depart_at: departAt,
+                preference: type === "minimum" ? "min_interchange" : "shortest"
+            });
+            setTripResults(trips);
+        } catch (err) {
+            console.error("Failed to update route:", err);
+            alert(err.message || "Failed to update route");
+        }
+    }
 
     return (
         <>
@@ -27,32 +58,39 @@ export default function TripResults({ results = [], onBack }) {
                         </div>
 
                         {/* Trip List */}
-                        {results.length === 0 ? (
+                        {safeResults.length === 0 ? (
                             <div className="text-center text-gray-500 py-10">
                                 No trips found. Try changing locations or time.
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                {results.slice(0, 3).map((trip, index) => (
-                                    <TripResultCard
-                                        key={trip.trip_id || index}
-                                        trip={trip}
-                                    />
-
-                                ))}
+                                {safeResults.slice(0, 3).map((trip, index) => {
+                                    if (!trip || typeof trip !== 'object') {
+                                        console.warn("Invalid trip data:", trip);
+                                        return null;
+                                    }
+                                    return (
+                                        <TripResultCard
+                                            key={trip.trip_id || index}
+                                            trip={trip}
+                                            routeType={preference}
+                                            onRouteChange={changePreference}
+                                        />
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* {selectedTrip && (
+            {selectedTrip && (
                 <TripDetailsPanel
                     trip={selectedTrip}
                     open={true}
                     onClose={() => setSelectedTrip(null)}
                 />
-            )} */}
+            )}
         </>
     );
 }

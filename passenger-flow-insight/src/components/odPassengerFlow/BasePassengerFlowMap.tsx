@@ -163,10 +163,10 @@ export default function BasePassengerFlowMap({
                     ctx.arc(x, y, 2.2, 0, Math.PI * 2);
                     ctx.fillStyle =
                         mode === "origin"
-                            ? "#22c55e"       // green
+                            ? "#22c55e"      
                             : mode === "destination"
-                                ? "#3b82f6"       // blue
-                                : "#a855f7";      // purple
+                                ? "#3b82f6"     
+                                : "#a855f7";      
                     ctx.fill();
                 }
             });

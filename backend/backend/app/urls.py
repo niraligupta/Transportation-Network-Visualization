@@ -6,7 +6,8 @@ from django.urls import path
 # from .views import PlanTripView, NearestStopView,od_flow_months, od_flow_api, passenger_flow_api, top_busiest_stations, line_heatmap, station_hourly_flow,station_summary,dashboard_summary,month_line_station_list,metro_routes,live_metro_positions
 
 from .views.od_flow_views import od_flow_api,od_flow_months
-from .views.trip_planner_views import PlanTripView,NearestStopView,MetroStops
+from .views.nearest_stop_views import NearestStopView
+from .views.trip_planner_views import PlanTripView,MetroStops
 from .views.dashboard_views import month_line_station_list, dashboard_summary,line_heatmap,top_busiest_stations,station_hourly_flow,station_summary
 from.views.passenger_flow_views import passenger_flow_api
 from.views.live_metro_flow_views import get_route_stops, get_route_shape, MetroStopList,BusStopList,live_metro_positions, metro_routes,RouteList

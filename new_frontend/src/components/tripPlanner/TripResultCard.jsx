@@ -2,20 +2,76 @@ import React, { useState } from "react";
 import { FaChevronRight, FaChevronDown } from "react-icons/fa";
 import TripMap from "./map/TripMap";
 
-export default function TripResultCard({ trip }) {
+export default function TripResultCard({ trip, routeType, onRouteChange }) {
     const [expanded, setExpanded] = useState(false);
+
 
     return (
         <div className="bg-white rounded-xl shadow-sm p-4 mb-4 border transition-all">
 
             {/* HEADER ROW */}
+            <div className="space-y-3">
+
+                {/* FROM → TO */}
+                <div className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <span>{trip.segments[0]?.on_stop}</span>
+                    <span className="text-gray-400">→</span>
+                    <span>{trip.segments[trip.segments.length - 1]?.off_stop}</span>
+                </div>
+
+                {/* ROUTE TYPE BUTTONS */}
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => onRouteChange("shortest")}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition
+        ${routeType === "shortest"
+                                ? "bg-red-600 text-white"
+                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            }`}
+                    >
+                        📍 Shortest Route
+                    </button>
+
+                    <button
+                        onClick={() => onRouteChange("minimum")}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition
+        ${routeType === "minimum"
+                                ? "bg-red-600 text-white"
+                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            }`}
+                    >
+                        🔁 Minimum Interchange
+                    </button>
+
+                </div>
+            </div>
+
             <div className="flex justify-between items-start">
 
                 {/* LEFT */}
                 <div className="flex-1">
+
                     <div className="text-xl font-semibold">{trip.duration} min</div>
                     <div className="text-sm text-gray-500">
                         {trip.start_time} – {trip.end_time}
+                    </div>
+
+                    {trip.wait_time > 0 && (
+                        <div className="text-sm text-orange-600 mt-1">
+                            Wait {trip.wait_time} min at {trip.segments[0]?.on_stop}
+                        </div>
+                    )}
+                    {/* METRO TIMING INFO */}
+                    <div className="text-xs text-blue-600 font-medium mt-1">
+                        {trip.wait_time > 0 ? (
+                            <>Next metro in {trip.wait_time} min (at {trip.next_metro_at})</>
+                        ) : trip.mode === "leave_now" ? (
+                            <>Board now — metro just arrived/departing</>
+                        ) : trip.mode === "depart_at" ? (
+                            <>Metro departs at {trip.start_time}</>
+                        ) : (
+                            <>Arrives by {trip.end_time}</>
+                        )}
                     </div>
 
                     {/* INTERCHANGE COUNT */}
