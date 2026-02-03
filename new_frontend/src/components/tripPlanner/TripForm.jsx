@@ -6,17 +6,19 @@ import PreferencesModal from "./PreferencesModel";
 import { searchMetroStops, planTrip } from "../../api/metroApi";
 
 export default function TripForm({
-    from, setFrom,
-    to, setTo,
-    when, setWhen,
-    departAt, setDepartAt,
+    // from, setFrom,
+    // to, setTo,
+    // when, setWhen,
+    // departAt, setDepartAt,
     preference,
     onPlanSuccess,
     handleUseCurrentLocation,
+    handleSwap,
 }) {
     const [from, setFrom] = useState("");
     const [to, setTo] = useState("");
-
+    const [when, setWhen] = useState("leave_now");
+    const [departAt, setDepartAt] = useState("");
     const [fromSuggestions, setFromSuggestions] = useState([]);
     const [toSuggestions, setToSuggestions] = useState([]);
 
@@ -25,8 +27,7 @@ export default function TripForm({
 
     const [errors, setErrors] = useState({ from: "", to: "" });
 
-    const [when, setWhen] = useState("leave_now");
-    const [departAt, setDepartAt] = useState("");
+
 
     const [loading, setLoading] = useState(false);
     const [showPrefs, setShowPrefs] = useState(false);
@@ -138,7 +139,7 @@ export default function TripForm({
                                 value={from}
                                 onChange={(e) => {
                                     setFrom(e.target.value);
-                                    if (props.setFrom) props.setFrom(e.target.value);
+                                    // if (props.setFrom) props.setFrom(e.target.value);
                                     fetchSuggestionsDebounced(
                                         e.target.value,
                                         setFromSuggestions,

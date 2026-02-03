@@ -59,13 +59,13 @@ export default function TripPlanner() {
                     setWhen={setWhen}
                     setDepartAt={setDepartAt}
                     setPreference={setPreference}
-                // preference={preference}
-                // onPlanSuccess={(results) => {
-                //     setTripResults(results);
-                //     setShowResults(true);
-                // }}
-                // handleUseCurrentLocation={handleUseCurrentLocation}
-                // handleSwap={handleSwap}
+                    preference={preference}
+                    onPlanSuccess={(results) => {
+                        setTripResults(results);
+                        setShowResults(true);
+                    }}
+                    handleUseCurrentLocation={handleUseCurrentLocation}
+                    handleSwap={handleSwap}
                 />
             ) : (
                 <TripResults

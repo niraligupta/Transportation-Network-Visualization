@@ -161,7 +161,7 @@ class PlanTripView(APIView):
 
     # Tuning constants
     TRANSFER_PENALTY_SEC = 600          # 10 min — used in time-based optimization
-    MIN_INTERCHANGE_PENALTY = 100_000   # very large → strongly prefers fewer transfers
+    MIN_INTERCHANGE_PENALTY = 100_000   # very large strongly prefers fewer transfers
     MAX_DIJKSTRA_ITERATIONS = 10_000    # safety net
 
     def post(self, request):
@@ -197,7 +197,7 @@ class PlanTripView(APIView):
             ref_time = datetime.now(timezone.get_current_timezone())
 
         ref_seconds = time_to_seconds(ref_time.strftime("%H:%M:%S"))
-        print(f"Planning {from_stop.stop_name} → {to_stop.stop_name} | preference={preference} | time={ref_seconds//3600:02d}:{(ref_seconds%3600)//60:02d}")
+        print(f"Planning {from_stop.stop_name} {to_stop.stop_name} | preference={preference} | time={ref_seconds//3600:02d}:{(ref_seconds%3600)//60:02d}")
         # ── Dijkstra ─────────────────────────────────────────────────────
         trips = self._find_best_paths(
             from_stop=from_stop,
@@ -281,7 +281,7 @@ class PlanTripView(APIView):
                 ).order_by("stop_sequence").first()
 
                 if direct_to_dest:
-                    print("    → Direct ride found!")
+                    print("    Direct ride found!")
                     print(f"      {dep_st.trip.trip_id} {dep_st.departure_time} {dep_st.stop_sequence} -> {direct_to_dest.stop_sequence}")
                     arr_sec = time_to_seconds(direct_to_dest.arrival_time)
                     travel_sec = arr_sec - dep_sec
@@ -305,7 +305,7 @@ class PlanTripView(APIView):
                         heappush(pq, (total_cost, to_stop.id))
                     continue  # no need to look for interchanges on direct path
 
-                # No direct ride → find next interchange opportunity
+                # No direct ride find next interchange opportunity
                 next_xfer = StopTime.objects.filter(
                     trip=dep_st.trip,
                     stop_sequence__gt=dep_st.stop_sequence,
@@ -313,7 +313,7 @@ class PlanTripView(APIView):
                 ).select_related("stops").order_by("stop_sequence").first()
 
                 if next_xfer:
-                    print(f"    → Next interchange at {next_xfer.stops.stop_name}")
+                    print(f"    Next interchange at {next_xfer.stops.stop_name}")
                     arr_sec = time_to_seconds(next_xfer.arrival_time)
                     total_cost = self._calculate_cost(
                         preference=preference,
@@ -335,7 +335,7 @@ class PlanTripView(APIView):
                         came_from[dest_id] = (current_id, segment)
                         heappush(pq, (total_cost, dest_id))
 
-            # 2. Walk/transfer to other lines at interchange stations
+           
             if current_stop.interchange:
                 other_platforms = Stops.objects.filter(
                     interchange=True,
@@ -347,7 +347,7 @@ class PlanTripView(APIView):
 
                     cost = self._calculate_cost(
                         preference=preference,
-                        arrival=distances[current_id],  # keep previous arrival time
+                        arrival=distances[current_id],  
                         wait=0,
                         transfers_count=new_transfer_count,
                     )
@@ -404,14 +404,14 @@ class PlanTripView(APIView):
             "segments": segments,
             "interchanges": transfers.get(to_stop.id, 0),
         }
-        print(f"    → Total cost: {total_cost}")
+        print(f"    Total cost: {total_cost}")
         print(f"Final path found with {len(segments)} segments")
-        print(f"    → Duration: {duration_min} minutes")
-        print(f"    → Wait time: {wait_min} minutes")
-        print(f"    → Start time: {seconds_to_time(start_sec)}")
-        print(f"    → End time: {seconds_to_time(end_sec)}")
-        print(f"    → Interchanges: {transfers.get(to_stop.id, 0)}")
-        print(f"    → Segments: {segments}")
+        print(f"    Duration: {duration_min} minutes")
+        print(f"    Wait time: {wait_min} minutes")
+        print(f"    Start time: {seconds_to_time(start_sec)}")
+        print(f"    End time: {seconds_to_time(end_sec)}")
+        print(f"    Interchanges: {transfers.get(to_stop.id, 0)}")
+        print(f"    Segments: {segments}")
         return [trip]
 
     def _calculate_cost(

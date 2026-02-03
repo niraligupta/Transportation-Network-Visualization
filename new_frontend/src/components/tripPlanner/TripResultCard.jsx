@@ -64,7 +64,9 @@ export default function TripResultCard({ trip, routeType, onRouteChange }) {
                     {/* METRO TIMING INFO */}
                     <div className="text-xs text-blue-600 font-medium mt-1">
                         {trip.wait_time > 0 ? (
-                            <>Next metro in {trip.wait_time} min (at {trip.next_metro_at})</>
+                            <>Next metro in {trip.wait_time} min
+                                {/* (at {trip.next_metro_at}) */}
+                            </>
                         ) : trip.mode === "leave_now" ? (
                             <>Board now — metro just arrived/departing</>
                         ) : trip.mode === "depart_at" ? (
