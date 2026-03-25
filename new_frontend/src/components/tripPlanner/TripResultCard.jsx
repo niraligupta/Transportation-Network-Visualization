@@ -1,13 +1,9 @@
-import React, { useState } from "react";
+import React from "react";
 import { FaChevronRight, FaChevronDown } from "react-icons/fa";
-import TripMap from "./map/TripMap";
 
-export default function TripResultCard({ trip, routeType, onRouteChange }) {
-    const [expanded, setExpanded] = useState(false);
-
-
+export default function TripResultCard({ trip, routeType, onRouteChange, onSelect, isSelected }) {
     return (
-        <div className="bg-white rounded-xl shadow-sm p-4 mb-4 border transition-all">
+        <div className={`bg-white rounded-xl shadow-sm p-4 mb-4 border transition-all ${isSelected ? "ring-2 ring-blue-400" : ""}`}>
 
             {/* HEADER ROW */}
             <div className="space-y-3">
@@ -114,60 +110,12 @@ export default function TripResultCard({ trip, routeType, onRouteChange }) {
 
                 {/* ARROW BUTTON */}
                 <button
-                    onClick={() => setExpanded(p => !p)}
+                    onClick={() => onSelect?.(trip)}
                     className="text-gray-400 text-xl ml-3 hover:text-black"
                 >
-                    {expanded ? <FaChevronDown /> : <FaChevronRight />}
+                    {isSelected ? <FaChevronDown /> : <FaChevronRight />}
                 </button>
             </div>
-
-
-            {expanded && (
-                <div className="mt-4 border-t pt-4 space-y-4">
-
-                    {/* SEGMENT DETAILS WITH ROUTE */}
-                    <div className="space-y-3">
-                        {trip.segments.map((seg, idx) => (
-                            <div key={idx}>
-
-                                {seg.mode === "metro" && (
-                                    <div className="flex items-start gap-3">
-
-                                        {/* Route color dot */}
-                                        <span
-                                            className="w-3 h-3 rounded-full mt-1 flex-shrink-0"
-                                            style={{ background: seg.route_color }}
-                                        />
-
-                                        <div>
-                                            {/* ROUTE NAME */}
-                                            <div className="text-sm font-semibold text-gray-800">
-                                                {seg.route_name}
-                                            </div>
-
-                                            {/* STATIONS */}
-                                            <div className="text-sm text-gray-600">
-                                                {seg.on_stop} → {seg.off_stop}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {seg.mode === "walk" && (
-                                    <div className="text-xs text-gray-500 ml-6">
-                                        🚶 Walk {seg.distance_meters} m
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* MAP */}
-                    <div className="h-64 rounded-lg overflow-hidden border">
-                        <TripMap segments={trip.segments} />
-                    </div>
-                </div>
-            )}
 
         </div>
     );

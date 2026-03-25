@@ -19,9 +19,9 @@ export default function TripPolyline({ segments }) {
     if (!segments || !segments.length) return null;
 
     // compute start/end for start->destination connector
-    const start = segments[0]?.shape?.[0];
+    const start = (segments[0]?.osm_shape || segments[0]?.shape)?.[0];
     const lastSeg = segments[segments.length - 1];
-    const end = lastSeg?.shape?.slice(-1)?.[0];
+    const end = (lastSeg?.osm_shape || lastSeg?.shape)?.slice(-1)?.[0];
 
     return (
         <>
@@ -46,8 +46,9 @@ export default function TripPolyline({ segments }) {
 
                 const Icon = seg.mode === "metro" ? FaSubway : seg.mode === "bus" ? FaBus : FaWalking;
 
+                const segmentPath = seg.osm_shape || seg.shape || [];
                 return (
-                    <Polyline key={i} positions={seg.shape} pathOptions={pathOptions}>
+                    <Polyline key={i} positions={segmentPath} pathOptions={pathOptions}>
                         <Tooltip direction="center" offset={[0, 0]} opacity={0.95}>
                             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                 <Icon style={{ width: 14, height: 14, color }} />

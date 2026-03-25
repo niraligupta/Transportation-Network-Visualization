@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import TripResultCard from "./TripResultCard";
-import TripDetailsPanel from "./TripDetailsPanel";
+import TripMap from "./map/TripMap";
 import { planTrip } from "../../api/metroApi";
 
 
@@ -13,7 +13,7 @@ export default function TripResults({ results = [],
     preference = "shortest",
     setTripResults,
     setPreference }) {
-    const [selectedTrip, setSelectedTrip] = useState(null);
+    const [selectedTripId, setSelectedTripId] = useState(null);
     const safeResults = Array.isArray(results) ? results : [];
     async function changePreference(type) {
         if (!from || !to || setTripResults === undefined || setPreference === undefined) {
@@ -41,8 +41,9 @@ export default function TripResults({ results = [],
     return (
         <>
             <div className="flex w-full justify-center">
-                <div className="w-full max-w-3xl px-4">
-                    <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-gray-100">
+                <div className={`w-full max-w-7xl px-4 ${selectedTripId ? "flex gap-4" : ""}`}>
+
+                    <div className={`rounded-2xl shadow-xl p-8 border border-gray-100 ${selectedTripId ? "w-1/2" : "w-full"} bg-white/95 backdrop-blur-md`}>
 
                         {/* Header */}
                         <div className="flex justify-between items-center mb-5">
@@ -75,22 +76,58 @@ export default function TripResults({ results = [],
                                             trip={trip}
                                             routeType={preference}
                                             onRouteChange={changePreference}
+                                            onSelect={(trip) => setSelectedTripId(prev => prev === trip.trip_id ? null : trip.trip_id)}
+                                            isSelected={selectedTripId === trip.trip_id}
                                         />
                                     );
                                 })}
                             </div>
                         )}
                     </div>
+
+                    {selectedTripId && (
+                        <div className="w-1/2 bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-bold text-gray-800">Trip Map</h3>
+                                <button
+                                    onClick={() => setSelectedTripId(null)}
+                                    className="text-gray-500 hover:text-gray-800"
+                                >
+                                    Close
+                                </button>
+                            </div>
+
+                            {(() => {
+                                const selectedTrip = safeResults.find(t => t.trip_id === selectedTripId);
+                                if (!selectedTrip) return <div className="text-gray-500">Selected trip not found.</div>;
+
+                                return (
+                                    <>
+                                        <div className="mb-3 text-sm text-gray-700">
+                                            {selectedTrip.duration} min · {selectedTrip.start_time} – {selectedTrip.end_time}
+                                        </div>
+
+                                        <div className="h-80 rounded-lg overflow-hidden border mb-3">
+                                            <TripMap segments={selectedTrip.segments} />
+                                        </div>
+
+                                        <div className="space-y-2 text-sm text-gray-600">
+                                            {selectedTrip.segments.map((seg, idx) => (
+                                                <div key={idx} className="p-2 rounded-lg bg-gray-50">
+                                                    {seg.mode === 'metro'
+                                                        ? `${seg.route_name}: ${seg.on_stop} → ${seg.off_stop}`
+                                                        : `Walk ${seg.distance_meters || 'N/A'} m`}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </>
+                                );
+                            })()}
+                        </div>
+                    )}
+
                 </div>
             </div>
-
-            {selectedTrip && (
-                <TripDetailsPanel
-                    trip={selectedTrip}
-                    open={true}
-                    onClose={() => setSelectedTrip(null)}
-                />
-            )}
         </>
     );
 }

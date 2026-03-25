@@ -44,10 +44,11 @@ export default function TripMarkers({ segments }) {
     const markers = [];
 
     segments.forEach((seg) => {
-        if (!seg.shape) return;
+        const line = seg.osm_shape || seg.shape;
+        if (!line) return;
         // pick every Nth to avoid overload
-        const step = Math.max(1, Math.floor(seg.shape.length / 8));
-        seg.shape.forEach((pt, idx) => {
+        const step = Math.max(1, Math.floor(line.length / 8));
+        line.forEach((pt, idx) => {
             if (idx % step !== 0) return;
             const colorName = (seg.route_color || seg.route || "").toString().toUpperCase();
             const color = ROUTE_COLORS[colorName] || (seg.mode === "walk" ? "#999" : "#555");
@@ -61,9 +62,9 @@ export default function TripMarkers({ segments }) {
     });
 
     // start and end
-    const start = segments[0]?.shape?.[0];
+    const start = (segments[0]?.osm_shape || segments[0]?.shape)?.[0];
     const last = segments[segments.length - 1];
-    const end = last?.shape?.slice(-1)?.[0];
+    const end = (last?.osm_shape || last?.shape)?.slice(-1)?.[0];
 
     return (
         <>

@@ -19,7 +19,8 @@ export default function TripMap({ segments }) {
     const allPoints = useMemo(() => {
         const pts = [];
         segments?.forEach((seg) => {
-            seg.shape?.forEach((p) => pts.push([p[0], p[1]]));
+            const line = seg.osm_shape || seg.shape;
+            line?.forEach((p) => pts.push([p[0], p[1]]));
         });
         return pts;
     }, [segments]);
