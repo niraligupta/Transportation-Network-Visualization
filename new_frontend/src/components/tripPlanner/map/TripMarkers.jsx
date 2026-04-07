@@ -31,7 +31,7 @@ const subwayIcon = (color) =>
         html: `<div style="
       display:flex;align-items:center;justify-content:center;
       width:20px;height:20px;border-radius:6px;
-      background:${color};color:#fff;font-size:12px;
+      background:transparent;color:${color};font-size:12px;
       transform: translate(-50%,-50%);
     ">🚇</div>`,
         className: "",

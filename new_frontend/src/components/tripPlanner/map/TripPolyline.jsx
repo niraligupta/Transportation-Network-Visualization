@@ -26,8 +26,12 @@ export default function TripPolyline({ segments }) {
     return (
         <>
             {segments.map((seg, i) => {
-                const keyColorName = (seg.route_color || seg.route || "").toString().toUpperCase();
-                const color = ROUTE_COLORS[keyColorName] || (seg.mode === "walk" ? "#777" : "#666");
+                // Use route_color directly if it's a hex code, else map from name
+                let color = seg.route_color;
+                if (!color || !color.startsWith('#')) {
+                    const keyColorName = (seg.route_color || seg.route || "").toString().toUpperCase();
+                    color = ROUTE_COLORS[keyColorName] || (seg.mode === "walk" ? "#777" : "#666");
+                }
 
                 const pathOptions = {
                     color,
@@ -51,7 +55,7 @@ export default function TripPolyline({ segments }) {
                     <Polyline key={i} positions={segmentPath} pathOptions={pathOptions}>
                         <Tooltip direction="center" offset={[0, 0]} opacity={0.95}>
                             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                <Icon style={{ width: 14, height: 14, color }} />
+                                <Icon style={{ width: 14, height: 14, color: color }} />
                                 <div style={{ fontSize: 12, fontWeight: 600 }}>{tooltipText}</div>
                             </div>
                         </Tooltip>
